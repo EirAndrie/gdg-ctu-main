@@ -1747,7 +1747,7 @@
           </mxCell>
         </UserObject>
         <UserObject label="has_attendees" mermaidId="e:EVENTS-&gt;EVENT_ATTENDEES#0" mermaidBaseStyle="curved=1;startArrow=ERmandOne;startSize=14;endArrow=ERzeroToMany;endSize=14;strokeColor=light-dark(#333333,#cccccc);strokeWidth=1;html=1;fontSize=14;labelBackgroundColor=light-dark(#F8FFEC4D,#2a2a2a4D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=light-dark(#333333,#cccccc);exitX=0.84;exitY=1;entryX=0.5;entryY=0;" mermaidBaseValue="has_attendees" id="xD0JK3srpxSHjVl_g-pz-661">
-          <mxCell edge="1" parent="xD0JK3srpxSHjVl_g-pz-281" source="xD0JK3srpxSHjVl_g-pz-372" style="curved=1;startArrow=ERmandOne;startSize=14;endArrow=ERzeroToMany;endSize=14;strokeColor=light-dark(#333333,#cccccc);strokeWidth=1;html=1;fontSize=14;labelBackgroundColor=light-dark(#F8FFEC4D,#2a2a2a4D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=light-dark(#333333,#cccccc);exitX=0.84;exitY=1;entryX=0.5;entryY=0;rounded=0;" target="xD0JK3srpxSHjVl_g-pz-454">
+          <mxCell edge="1" parent="xD0JK3srpxSHjVl_g-pz-281" source="xD0JK3srpxSHjVl_g-pz-433" style="curved=1;startArrow=ERmandOne;startSize=14;endArrow=ERzeroToMany;endSize=14;strokeColor=light-dark(#333333,#cccccc);strokeWidth=1;html=1;fontSize=14;labelBackgroundColor=light-dark(#F8FFEC4D,#2a2a2a4D);fontFamily=Trebuchet MS,Verdana,Arial,sans-serif;fontColor=light-dark(#333333,#cccccc);exitX=0.555;exitY=0.977;entryX=0.5;entryY=0;rounded=0;exitDx=0;exitDy=0;exitPerimeter=0;" target="xD0JK3srpxSHjVl_g-pz-454">
             <mxGeometry relative="1" as="geometry">
               <Array as="points">
                 <mxPoint x="1267" y="2032" />
