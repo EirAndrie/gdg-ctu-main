@@ -12,7 +12,15 @@ const router = Router();
 
 router.post("/", createMediaCollectionItem);
 router.get("/", validateQuery("page", "limit"), listMediaCollectionItems);
-router.get("/:collectionId/:mediaId", validateParams("collectionId", "mediaId"), getMediaCollectionItem);
-router.delete("/:collectionId/:mediaId", validateParams("collectionId", "mediaId"), deleteMediaCollectionItem);
+router.get(
+      "/:collectionId/:mediaId",
+      validateParams("collectionId", "mediaId"),
+      getMediaCollectionItem,
+);
+router.delete(
+      "/:collectionId/:mediaId",
+      validateParams("collectionId", "mediaId"),
+      deleteMediaCollectionItem,
+);
 
 export default router;

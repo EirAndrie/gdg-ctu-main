@@ -8,6 +8,13 @@
       "when": 1787319363416,
       "tag": "0000_petite_nuke",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787493377689,
+      "tag": "0001_melted_silhouette",
+      "breakpoints": true
     }
   ]
 }
