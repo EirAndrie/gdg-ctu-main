@@ -16,12 +16,17 @@ export const CreateMediaCollectionSchema = createInsertSchema(mediaCollections)
             createdBy: z.string().uuid(),
       });
 
-export const UpdateMediaCollectionSchema = CreateMediaCollectionSchema.partial().refine(
-      data => Object.keys(data).length > 0,
-      "At least one field is required",
-);
+export const UpdateMediaCollectionSchema =
+      CreateMediaCollectionSchema.partial().refine(
+            (data) => Object.keys(data).length > 0,
+            "At least one field is required",
+      );
 
 export type MediaCollectionRecord = z.infer<typeof MediaCollectionRecordSchema>;
 export type MediaCollection = z.infer<typeof MediaCollectionSchema>;
-export type CreateMediaCollectionDTO = z.infer<typeof CreateMediaCollectionSchema>;
-export type UpdateMediaCollectionDTO = z.infer<typeof UpdateMediaCollectionSchema>;
+export type CreateMediaCollectionDTO = z.infer<
+      typeof CreateMediaCollectionSchema
+>;
+export type UpdateMediaCollectionDTO = z.infer<
+      typeof UpdateMediaCollectionSchema
+>;
