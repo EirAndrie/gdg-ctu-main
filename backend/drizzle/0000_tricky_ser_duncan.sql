@@ -1,12 +1,15 @@
 CREATE TABLE "admins" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"clerk_id" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"password_hash" varchar(255) NOT NULL,
 	"first_name" varchar(100) NOT NULL,
 	"last_name" varchar(100) NOT NULL,
+	"profile_img_url" text,
 	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "admins_clerk_id_unique" UNIQUE("clerk_id"),
 	CONSTRAINT "admins_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -72,17 +75,44 @@ CREATE TABLE "events" (
 	CONSTRAINT "events_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
+CREATE TABLE "media_collection_items" (
+	"collection_id" uuid NOT NULL,
+	"media_id" uuid NOT NULL,
+	"display_order" integer DEFAULT 0 NOT NULL,
+	"caption" varchar(255),
+	"added_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "media_collection_items_collection_id_media_id_pk" PRIMARY KEY("collection_id","media_id")
+);
+--> statement-breakpoint
+CREATE TABLE "media_collections" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"slug" varchar(255) NOT NULL,
+	"description" text,
+	"cover_media_id" uuid,
+	"created_by" uuid NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "media_collections_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
 CREATE TABLE "media" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"uploaded_by" uuid NOT NULL,
-	"filename" varchar(255) NOT NULL,
-	"storage_key" varchar(255) NOT NULL,
-	"url" varchar(2048) NOT NULL,
-	"mime_type" varchar(100) NOT NULL,
-	"file_size" bigint NOT NULL,
+	"cloudinary_asset_id" varchar(255) NOT NULL,
+	"public_id" varchar(255) NOT NULL,
+	"secure_url" text NOT NULL,
+	"resource_type" varchar(50) NOT NULL,
+	"format" varchar(50),
+	"width" integer,
+	"height" integer,
+	"bytes" integer,
+	"original_filename" varchar(255),
 	"alt_text" varchar(255),
+	"uploaded_by" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "media_storage_key_unique" UNIQUE("storage_key")
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "media_cloudinary_asset_id_unique" UNIQUE("cloudinary_asset_id"),
+	CONSTRAINT "media_public_id_unique" UNIQUE("public_id")
 );
 --> statement-breakpoint
 CREATE TABLE "site_content" (
@@ -126,6 +156,10 @@ ALTER TABLE "event_speakers" ADD CONSTRAINT "event_speakers_profile_media_id_med
 ALTER TABLE "event_speakers" ADD CONSTRAINT "event_speakers_team_member_id_team_members_id_fk" FOREIGN KEY ("team_member_id") REFERENCES "public"."team_members"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_cover_media_id_media_id_fk" FOREIGN KEY ("cover_media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_created_by_admins_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media_collection_items" ADD CONSTRAINT "media_collection_items_collection_id_media_collections_id_fk" FOREIGN KEY ("collection_id") REFERENCES "public"."media_collections"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media_collection_items" ADD CONSTRAINT "media_collection_items_media_id_media_id_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media_collections" ADD CONSTRAINT "media_collections_cover_media_id_media_id_fk" FOREIGN KEY ("cover_media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media_collections" ADD CONSTRAINT "media_collections_created_by_admins_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "media" ADD CONSTRAINT "media_uploaded_by_admins_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "site_content" ADD CONSTRAINT "site_content_media_id_media_id_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "site_content" ADD CONSTRAINT "site_content_updated_by_admins_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -7,19 +7,24 @@ import apiRoutes from "./modules";
 import {
       validateServerPort,
       validateFrontendOrigin,
+      validateClerkKeys,
       validateProductionMode,
       configureCors,
       configureEnvironmentRoutes,
 } from "./utils/serverValidation";
+import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
 const PORT = validateServerPort(ENV.PORT);
 const FR_ORIGIN = validateFrontendOrigin(ENV.FR_ORIGIN);
 const isProduction = validateProductionMode(ENV.NODE_ENV);
+validateClerkKeys(ENV.CLERK_PUBLISHABLE_KEY, ENV.CLERK_SECRET_KEY);
 
 // --- MIDDLEWARE ---
 app.use(express.json());
 configureCors(app, FR_ORIGIN, isProduction);
+// --- CLERK MIDDLEWARE ---
+app.use(clerkMiddleware());
 
 // ROUTES SECTION
 app.use("/GDGoC-CTU-Main/v0.0.1", apiRoutes);
