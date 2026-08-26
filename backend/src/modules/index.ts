@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { requireAuth } from "../middleware/requireAuth";
 import adminRoutes from "./admins/admin.routes";
+import authRoutes from "./auth/auth.routes";
 import eventHostRoutes from "./event-hosts/event-hosts.routes";
 import eventAttendeeRoutes from "./event-attendees/event-attendees.routes";
 import eventRoutes from "./events/event.routes";
@@ -11,16 +13,20 @@ import teamMemberRoutes from "./team-members/team-member.routes";
 import eventSpeakerRoutes from "./event-speakers/event-speaker.routes";
 
 const router = Router();
+const protectedRouter = Router();
 
-router.use("/admins", adminRoutes);
-router.use("/team-members", teamMemberRoutes);
-router.use("/events", eventRoutes);
-router.use("/media", mediaRoutes);
-router.use("/site-content", siteContentRoutes);
-router.use("/event-speakers", eventSpeakerRoutes);
-router.use("/event-hosts", eventHostRoutes);
-router.use("/event-attendees", eventAttendeeRoutes);
-router.use("/media-collections", mediaCollectionRoutes);
-router.use("/media-collection-items", mediaCollectionItemRoutes);
+protectedRouter.use(requireAuth);
+protectedRouter.use("/admins", adminRoutes);
+protectedRouter.use("/auth", authRoutes);
+protectedRouter.use("/team-members", teamMemberRoutes);
+protectedRouter.use("/events", eventRoutes);
+protectedRouter.use("/media", mediaRoutes);
+protectedRouter.use("/site-content", siteContentRoutes);
+protectedRouter.use("/event-speakers", eventSpeakerRoutes);
+protectedRouter.use("/event-hosts", eventHostRoutes);
+protectedRouter.use("/event-attendees", eventAttendeeRoutes);
+protectedRouter.use("/media-collections", mediaCollectionRoutes);
+protectedRouter.use("/media-collection-items", mediaCollectionItemRoutes);
+router.use(protectedRouter);
 
 export default router;

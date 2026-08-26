@@ -39,6 +39,57 @@ export const getAdminByEmail = async (email: string) => {
       return admin;
 };
 
+export const getAdminByClerkId = async (clerkId: string) => {
+      return await db.select().from(admins).where(eq(admins.clerkId, clerkId));
+};
+
+/**
+ * Insert a new admin or update an existing one based on Clerk ID.
+ * Returns the inserted or updated admin record.
+ */
+export const upsertAdminByClerkId = async (data: {
+      clerkId: string;
+      email: string;
+      name: string;
+      profileImgUrl?: string;
+}) => {
+      // Split the full name into first and last name components.
+      const [firstName, ...rest] = data.name.trim().split(/\s+/);
+      const lastName = rest.join(" ") || "";
+      // Placeholder password hash for admins managed via Clerk.
+      const placeholderPasswordHash = "clerk-generated-placeholder";
+
+      const existing = await getAdminByClerkId(data.clerkId);
+      if (existing.length > 0) {
+            // Update existing admin.
+            const [admin] = await db
+                  .update(admins)
+                  .set({
+                        email: data.email,
+                        firstName,
+                        lastName,
+                        profileImgUrl: data.profileImgUrl,
+                        updatedAt: new Date(),
+                  })
+                  .where(eq(admins.clerkId, data.clerkId))
+                  .returning();
+            return admin;
+      }
+      // Insert new admin.
+      const [admin] = await db
+            .insert(admins)
+            .values({
+                  clerkId: data.clerkId,
+                  email: data.email,
+                  passwordHash: placeholderPasswordHash,
+                  firstName,
+                  lastName,
+                  profileImgUrl: data.profileImgUrl,
+            })
+            .returning();
+      return admin;
+};
+
 export const updateAdmin = async (
       id: string,
       data: Partial<NewAdminRecord>,

@@ -37,6 +37,24 @@ export function validateFrontendOrigin(frOrigin: string | undefined): string {
       return frOrigin;
 }
 
+// Check if clerk keys exist
+export function validateClerkKeys(
+      clerkPubKey: string | undefined,
+      clerkSecKey: string | undefined,
+): { publishableKey: string; secretKey: string } {
+      if (!clerkPubKey || !clerkSecKey) {
+            logger.info(
+                  "Error: CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY must be set in environment variables.",
+            );
+            process.exit(1);
+      }
+
+      return {
+            publishableKey: clerkPubKey,
+            secretKey: clerkSecKey,
+      };
+}
+
 // Check if server is in production mode
 export function validateProductionMode(mode: string | undefined): boolean {
       if (!mode) {
