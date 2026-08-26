@@ -8,14 +8,19 @@ export const CreateMediaSchema = createInsertSchema(media)
       .omit({
             id: true,
             createdAt: true,
+            updatedAt: true,
+            cloudinaryAssetId: true,
+            publicId: true,
+            secureUrl: true,
+            resourceType: true,
+            format: true,
+            width: true,
+            height: true,
+            bytes: true,
+            originalFilename: true,
       })
       .extend({
             uploadedBy: z.string().uuid(),
-            filename: z.string().trim().min(1),
-            storageKey: z.string().trim().min(1),
-            url: z.string().url(),
-            mimeType: z.string().trim().min(1),
-            fileSize: z.number().int().positive(),
             altText: z.string().trim().nullable().optional(),
       });
 

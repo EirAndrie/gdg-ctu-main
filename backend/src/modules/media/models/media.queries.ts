@@ -16,11 +16,7 @@ export const insertMedia = async (data: NewMediaRecord) => {
 };
 
 export const getMedia = async (pagination: Pagination) =>
-      db
-            .select()
-            .from(media)
-            .limit(pagination.limit)
-            .offset(pagination.offset);
+      db.select().from(media).limit(pagination.limit).offset(pagination.offset);
 
 export const countMedia = async () => {
       const [result] = await db.select({ total: count() }).from(media);
@@ -29,14 +25,6 @@ export const countMedia = async () => {
 
 export const getMediaById = async (id: string) => {
       const [record] = await db.select().from(media).where(eq(media.id, id));
-      return record;
-};
-
-export const getMediaByStorageKey = async (storageKey: string) => {
-      const [record] = await db
-            .select()
-            .from(media)
-            .where(eq(media.storageKey, storageKey));
       return record;
 };
 

@@ -2,6 +2,7 @@ import ENV from "./config/env";
 import express from "express";
 import logger from "./utils/logger";
 import { connectDB } from "./config/connectDB";
+import { testCloudinaryConnection } from "./config/cloudinary/cloudinary.connection";
 import apiRoutes from "./modules";
 import {
       validateServerPort,
@@ -25,13 +26,14 @@ app.use("/GDGoC-CTU-Main/v0.0.1", apiRoutes);
 configureEnvironmentRoutes(app, isProduction);
 
 connectDB()
+      .then(() => testCloudinaryConnection())
       .then(() => {
             app.listen(PORT, () => {
                   logger.info(`Server is running on port ${PORT}`);
             });
       })
       .catch((err) => {
-            logger.error("Failed to connect to the database:", {
+            logger.error("Failed to start server:", {
                   message: err.message,
                   stack: err.stack,
             });

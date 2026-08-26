@@ -1,27 +1,28 @@
+import {
+      uploadMedia,
+      deleteMedia as cloudinaryDeleteMedia,
+} from "../../config/cloudinary/cloudinary.services";
 import { AppError } from "../../utils/http";
-import { getPaginationMeta, Pagination } from "../../utils/pagination";
 import { getAdminById } from "../admins/models/admin.queries";
+import { getPaginationMeta, Pagination } from "../../utils/pagination";
 import {
       countMedia,
       deleteMedia,
       getMedia,
       getMediaById,
-      getMediaByStorageKey,
       insertMedia,
       mediaHasReferences,
       updateMedia,
 } from "./models/media.queries";
-import { CreateMediaDTO, UpdateMediaDTO } from "./media.validations";
+import { UpdateMediaDTO } from "./media.validations";
 
-export const createMediaService = async (data: CreateMediaDTO) => {
+export const createMediaService = async (data: any) => {
       if (!(await getAdminById(data.uploadedBy))) {
-            throw new AppError(400, "uploadedBy must reference an existing admin");
+            throw new AppError(
+                  400,
+                  "uploadedBy must reference an existing admin",
+            );
       }
-
-      if (await getMediaByStorageKey(data.storageKey)) {
-            throw new AppError(409, "Media storageKey already exists");
-      }
-
       return insertMedia(data);
 };
 
@@ -47,10 +48,7 @@ export const getMediaByIdService = async (id: string) => {
       return media;
 };
 
-export const updateMediaService = async (
-      id: string,
-      data: UpdateMediaDTO,
-) => {
+export const updateMediaService = async (id: string, data: UpdateMediaDTO) => {
       const media = await getMediaById(id);
 
       if (!media) {
@@ -58,17 +56,11 @@ export const updateMediaService = async (
       }
 
       if (data.uploadedBy && !(await getAdminById(data.uploadedBy))) {
-            throw new AppError(400, "uploadedBy must reference an existing admin");
+            throw new AppError(
+                  400,
+                  "uploadedBy must reference an existing admin",
+            );
       }
-
-      if (data.storageKey && data.storageKey !== media.storageKey) {
-            const existingMedia = await getMediaByStorageKey(data.storageKey);
-
-            if (existingMedia) {
-                  throw new AppError(409, "Media storageKey already exists");
-            }
-      }
-
       return updateMedia(id, data);
 };
 
@@ -86,5 +78,10 @@ export const deleteMediaService = async (id: string) => {
             );
       }
 
+      // Delete from Cloudinary using publicId and resourceType
+      await cloudinaryDeleteMedia(
+            media.publicId,
+            media.resourceType as "image" | "video" | "raw",
+      );
       await deleteMedia(id);
 };
