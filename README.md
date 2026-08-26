@@ -3,7 +3,7 @@ Regards Ryan Andrie Coretico very handsome
 test comm
 ***
 
-BACKEND config:
+BACKEND:
   - Run Server
     - cd backend
     - npm install
@@ -16,6 +16,10 @@ DATABASE:
 - Uses drizzle orm: https://orm.drizzle.team/
 - npm run db:generate //generates/writes postgreSql migration file
 - npm run db:migrate //migrate the generated postgre files
+
+CLOUDINARY:
+- Get credentials at https://cloudinary.com/
+- Provide environment variables found in the project env example file
 
 ENV:
 - Found in the example env file, the following empty variables are the environment variables being used in the backend.
