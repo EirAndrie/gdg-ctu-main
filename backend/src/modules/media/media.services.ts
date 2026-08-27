@@ -14,7 +14,16 @@ import {
       mediaHasReferences,
       updateMedia,
 } from "./models/media.queries";
-import { UpdateMediaDTO } from "./media.validations";
+import { UpdateMediaDTO, CreateMediaDTO, Media } from "./media.validations";
+import {
+      getCache,
+      setCache,
+      deleteCache,
+      clearCacheByPrefix,
+} from "../../config/redis/redis.services";
+
+// Constant value for cache timeout
+const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
 
 export const createMediaService = async (data: any) => {
       if (!(await getAdminById(data.uploadedBy))) {
@@ -23,28 +32,48 @@ export const createMediaService = async (data: any) => {
                   "uploadedBy must reference an existing admin",
             );
       }
+
+      await clearCacheByPrefix("media:");
       return insertMedia(data);
 };
 
 export const getMediaService = async (pagination: Pagination) => {
+      const cacheKey = `media:${pagination.page}:${pagination.limit}`;
+
+      // Check Cache
+      const cached = await getCache<{
+            media: Media[];
+            pagination: ReturnType<typeof getPaginationMeta>;
+      }>(cacheKey);
+
+      if (cached) return cached;
+
+      // Cache Miss
       const [media, total] = await Promise.all([
             getMedia(pagination),
             countMedia(),
       ]);
 
-      return {
+      const res = {
             media,
             pagination: getPaginationMeta(pagination, total),
       };
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const getMediaByIdService = async (id: string) => {
-      const media = await getMediaById(id);
+      const cacheKey = `media:${id}`;
+      const cachedMedia = await getCache<Media>(cacheKey);
+      if (cachedMedia) return cachedMedia;
 
+      const media = await getMediaById(id);
       if (!media) {
             throw new AppError(404, "Media not found");
       }
 
+      await setCache(cacheKey, media, DEFAULT_CACHE_TIME_TO_LIVE);
       return media;
 };
 
@@ -61,6 +90,9 @@ export const updateMediaService = async (id: string, data: UpdateMediaDTO) => {
                   "uploadedBy must reference an existing admin",
             );
       }
+
+      await deleteCache(`media:${id}`);
+      await clearCacheByPrefix("media:");
       return updateMedia(id, data);
 };
 
@@ -83,5 +115,8 @@ export const deleteMediaService = async (id: string) => {
             media.publicId,
             media.resourceType as "image" | "video" | "raw",
       );
+
+      await deleteCache(`media:${id}`);
+      await clearCacheByPrefix("media:");
       await deleteMedia(id);
 };

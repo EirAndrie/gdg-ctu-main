@@ -16,7 +16,17 @@ import {
 import {
       CreateEventSpeakerDTO,
       UpdateEventSpeakerDTO,
+      EventSpeaker,
 } from "./event-speaker.validations";
+import {
+      getCache,
+      setCache,
+      deleteCache,
+      clearCacheByPrefix,
+} from "../../config/redis/redis.services";
+
+// Constant value for cache timeout
+const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
 
 const validateEventSpeakerReferences = async (
       data: Partial<
@@ -47,38 +57,61 @@ export const createEventSpeakerService = async (
 
       await validateEventSpeakerReferences(data);
 
+      await clearCacheByPrefix("speakers:");
       return insertEventSpeaker(data);
 };
 
 export const getEventSpeakersService = async (pagination: Pagination) => {
+      const cacheKey = `speakers:${pagination.page}:${pagination.limit}`;
+
+      // Check Cache
+      const cached = await getCache<{
+            eventSpeakers: EventSpeaker[];
+            pagination: ReturnType<typeof getPaginationMeta>;
+      }>(cacheKey);
+
+      if (cached) return cached;
+
+      // Cache Miss
       const [eventSpeakers, total] = await Promise.all([
             getEventSpeakers(pagination),
             countEventSpeakers(),
       ]);
 
-      return {
+      const res = {
             eventSpeakers,
             pagination: getPaginationMeta(pagination, total),
       };
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const getEventSpeakerByIdService = async (id: string) => {
-      const eventSpeaker = await getEventSpeakerById(id);
+      const cacheKey = `speakers:${id}`;
+      const cachedSpeaker = await getCache<EventSpeaker>(cacheKey);
+      if (cachedSpeaker) return cachedSpeaker;
 
+      const eventSpeaker = await getEventSpeakerById(id);
       if (!eventSpeaker) {
             throw new AppError(404, "Event speaker not found");
       }
 
+      await setCache(cacheKey, eventSpeaker, DEFAULT_CACHE_TIME_TO_LIVE);
       return eventSpeaker;
 };
 
 export const getEventSpeakerBySlugService = async (slug: string) => {
-      const eventSpeaker = await getEventSpeakerBySlug(slug);
+      const cacheKey = `speakers:${slug}`;
+      const cachedSpeakerSlug = await getCache<EventSpeaker>(cacheKey);
+      if (cachedSpeakerSlug) return cachedSpeakerSlug;
 
+      const eventSpeaker = await getEventSpeakerBySlug(slug);
       if (!eventSpeaker) {
             throw new AppError(404, "Event speaker not found");
       }
 
+      await setCache(cacheKey, eventSpeaker, DEFAULT_CACHE_TIME_TO_LIVE);
       return eventSpeaker;
 };
 
@@ -90,15 +123,29 @@ export const getEventSpeakersByTeamMemberIdService = async (
             throw new AppError(404, "Team member not found");
       }
 
+      const cacheKey = `speaker:${teamMemberId}:${pagination.page}:${pagination.limit}`;
+
+      // Check Cache
+      const cached = await getCache<{
+            eventSpeakers: EventSpeaker[];
+            pagination: ReturnType<typeof getPaginationMeta>;
+      }>(cacheKey);
+
+      if (cached) return cached;
+
+      // Cache Miss
       const [eventSpeakers, total] = await Promise.all([
             getEventSpeakersByTeamMemberId(teamMemberId, pagination),
             countEventSpeakersByTeamMemberId(teamMemberId),
       ]);
 
-      return {
+      const res = {
             eventSpeakers,
             pagination: getPaginationMeta(pagination, total),
       };
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const updateEventSpeakerService = async (
@@ -121,6 +168,9 @@ export const updateEventSpeakerService = async (
 
       await validateEventSpeakerReferences(data);
 
+      await deleteCache(`speakers:${id}`);
+      await clearCacheByPrefix(`speakers:`);
+
       return updateEventSpeaker(id, {
             ...data,
             updatedAt: new Date(),
@@ -134,5 +184,7 @@ export const deleteEventSpeakerService = async (id: string) => {
             throw new AppError(404, "Event speaker not found");
       }
 
+      await deleteCache(`speakers:${id}`);
+      await clearCacheByPrefix("speakers:");
       await deleteEventSpeaker(id);
 };

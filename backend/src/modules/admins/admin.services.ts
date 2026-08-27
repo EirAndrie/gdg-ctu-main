@@ -15,7 +15,17 @@ import {
       CreateAdminDTO,
       UpdateAdminDTO,
 } from "./admin.validations";
+import {
+      getCache,
+      setCache,
+      deleteCache,
+      clearCacheByPrefix,
+} from "../../config/redis/redis.services";
 
+// Constant value for cache timeout
+const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
+
+// Prevent throwing admin password in response
 export const toAdminResponse = (admin: AdminRecord) => {
       const { passwordHash: _passwordHash, ...publicAdmin } = admin;
       return publicAdmin;
@@ -29,29 +39,51 @@ export const createAdminService = async (data: CreateAdminDTO) => {
       }
 
       const admin = await insertAdmin(data);
+
+      await clearCacheByPrefix("admins:");
       return toAdminResponse(admin);
 };
 
 export const getAdminsService = async (pagination: Pagination) => {
+      const cacheKey = `admins:${pagination.page}:${pagination.limit}`;
+
+      // Check Cache
+      const cached = await getCache<{
+            admins: AdminRecord[];
+            pagination: ReturnType<typeof getPaginationMeta>;
+      }>(cacheKey);
+
+      if (cached) return cached;
+
+      // Cache Miss
       const [admins, total] = await Promise.all([
             getAdmins(pagination),
             countAdmins(),
       ]);
 
-      return {
+      const res = {
             admins: admins.map(toAdminResponse),
             pagination: getPaginationMeta(pagination, total),
       };
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const getAdminByIdService = async (id: string) => {
-      const admin = await getAdminById(id);
+      const cacheKey = `admins:${id}`;
+      const cachedAdmin = await getCache<AdminRecord>(cacheKey);
+      if (cachedAdmin) return cachedAdmin;
 
+      const admin = await getAdminById(id);
       if (!admin) {
             throw new AppError(404, "Admin not found");
       }
 
-      return toAdminResponse(admin);
+      const res = toAdminResponse(admin);
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+
+      return res;
 };
 
 export const updateAdminService = async (id: string, data: UpdateAdminDTO) => {
@@ -74,6 +106,9 @@ export const updateAdminService = async (id: string, data: UpdateAdminDTO) => {
             updatedAt: new Date(),
       });
 
+      await deleteCache(`admins:${id}`);
+      await clearCacheByPrefix("admins:");
+
       return toAdminResponse(updatedAdmin);
 };
 
@@ -91,5 +126,7 @@ export const deleteAdminService = async (id: string) => {
             );
       }
 
+      await deleteCache(`admins:${id}`);
+      await clearCacheByPrefix("admins:");
       await deleteAdmin(id);
 };
