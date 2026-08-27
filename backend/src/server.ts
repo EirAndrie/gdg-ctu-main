@@ -3,6 +3,7 @@ import express from "express";
 import logger from "./utils/logger";
 import { connectDB } from "./config/connectDB";
 import { testCloudinaryConnection } from "./config/cloudinary/cloudinary.connection";
+import { testRedisConnection } from "./config/redis/redis.config";
 import apiRoutes from "./modules";
 import {
       validateServerPort,
@@ -32,6 +33,7 @@ configureEnvironmentRoutes(app, isProduction);
 
 connectDB()
       .then(() => testCloudinaryConnection())
+      .then(() => testRedisConnection())
       .then(() => {
             app.listen(PORT, () => {
                   logger.info(`Server is running on port ${PORT}`);

@@ -1,5 +1,5 @@
 {
-  "id": "cc798c20-67a8-4a7d-a1c7-c31782c10be5",
+  "id": "9585d3be-40f2-48df-aa7f-ee126e4c9f5b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1039,6 +1039,24 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "department": {
+          "name": "department",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program": {
+          "name": "program",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year_section": {
+          "name": "year_section",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
         },
         "profile_media_id": {
           "name": "profile_media_id",

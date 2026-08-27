@@ -10,9 +10,22 @@ import {
       updateMediaCollection,
       deleteMediaCollection,
 } from "./models/media-collection.queries";
-import { CreateMediaCollectionDTO } from "./media-collections.validations";
+import {
+      CreateMediaCollectionDTO,
+      MediaCollectionRecord,
+      UpdateMediaCollectionDTO,
+} from "./media-collections.validations";
+import {
+      getCache,
+      setCache,
+      deleteCache,
+      clearCacheByPrefix,
+} from "../../config/redis/redis.services";
 
-export const toMediaCollectionResponse = (col: any) => col; // no sensitive fields
+// Constant value for cache timeout
+const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
+
+export const toMediaCollectionResponse = (col: MediaCollectionRecord) => col; // no sensitive fields
 
 export const createMediaCollectionService = async (
       data: CreateMediaCollectionDTO,
@@ -29,50 +42,83 @@ export const createMediaCollectionService = async (
                   "coverMediaId must reference existing media",
             );
       }
+
       const col = await insertMediaCollection(data);
+
+      await clearCacheByPrefix("collections:");
       return toMediaCollectionResponse(col);
 };
 
 export const listMediaCollectionsService = async (pagination: Pagination) => {
+      const cacheKey = `collections:${pagination.page}:${pagination.limit}`;
+
+      // Check Cache
+      const cached = await getCache<{
+            collections: MediaCollectionRecord[];
+            pagination: ReturnType<typeof getPaginationMeta>;
+      }>(cacheKey);
+
+      if (cached) return cached;
+
+      // Cache Miss
       const [collections, total] = await Promise.all([
             getMediaCollections(pagination),
             countMediaCollections(),
       ]);
-      return {
+
+      const res = {
             collections: collections.map(toMediaCollectionResponse),
             pagination: getPaginationMeta(pagination, total),
       };
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const getMediaCollectionService = async (id: string) => {
+      const cacheKey = `collections:${id}`;
+      const cachedCollection = await getCache<MediaCollectionRecord>(cacheKey);
+      if (cachedCollection) return cachedCollection;
+
       const col = await getMediaCollectionById(id);
       if (!col) {
             throw new AppError(404, "Media collection not found");
       }
-      return toMediaCollectionResponse(col);
+
+      const res = toMediaCollectionResponse(col);
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const updateMediaCollectionService = async (
       id: string,
-      data: Partial<CreateMediaCollectionDTO>,
+      data: UpdateMediaCollectionDTO,
 ) => {
       const existing = await getMediaCollectionById(id);
       if (!existing) {
             throw new AppError(404, "Media collection not found");
       }
+
       if (data.createdBy && !(await getAdminById(data.createdBy))) {
             throw new AppError(
                   400,
                   "createdBy must reference an existing admin",
             );
       }
+
       if (data.coverMediaId && !(await getMediaById(data.coverMediaId))) {
             throw new AppError(
                   400,
                   "coverMediaId must reference existing media",
             );
       }
+
       const updated = await updateMediaCollection(id, data);
+
+      await deleteCache(`collections:${id}`);
+      await clearCacheByPrefix("collections:");
+
       return toMediaCollectionResponse(updated);
 };
 
@@ -81,6 +127,9 @@ export const deleteMediaCollectionService = async (id: string) => {
       if (!existing) {
             throw new AppError(404, "Media collection not found");
       }
+      
       // Optional: could check for items referencing collection before delete
+      await deleteCache(`collections:${id}`);
+      await clearCacheByPrefix("collections:");
       await deleteMediaCollection(id);
 };

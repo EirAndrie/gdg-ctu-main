@@ -9,6 +9,7 @@ const ENV = {
       CLOUDINARY_URL: process.env.CLOUDINARY_URL,
       CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+      REDIS_URL: process.env.REDIS_URL,
 };
 
 export default ENV;

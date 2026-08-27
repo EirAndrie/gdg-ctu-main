@@ -13,8 +13,18 @@ import {
       NewEventRecord,
       updateEvent,
 } from "./models/event.queries";
-import { CreateEventDTO, UpdateEventDTO } from "./event.validations";
+import { CreateEventDTO, UpdateEventDTO, Event } from "./event.validations";
+import {
+      getCache,
+      setCache,
+      deleteCache,
+      clearCacheByPrefix,
+} from "../../config/redis/redis.services";
 
+// Constant value for cache timeout
+const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
+
+// HELPER VALIDATION FUNCTIONS
 const getPublishedAtForStatus = (
       status: EventStatus | undefined,
       existingPublishedAt?: Date | null,
@@ -35,7 +45,10 @@ const validateEventReferences = async (
             Partial<Pick<CreateEventDTO, "coverMediaId">>,
 ) => {
       if (!(await getAdminById(data.createdBy))) {
-            throw new AppError(400, "createdBy must reference an existing admin");
+            throw new AppError(
+                  400,
+                  "createdBy must reference an existing admin",
+            );
       }
 
       if (data.coverMediaId && !(await getMediaById(data.coverMediaId))) {
@@ -46,6 +59,7 @@ const validateEventReferences = async (
       }
 };
 
+// MAIN SERVICE FUNCTIONS
 export const createEventService = async (data: CreateEventDTO) => {
       if (await getEventBySlug(data.slug)) {
             throw new AppError(409, "Event slug already exists");
@@ -58,45 +72,65 @@ export const createEventService = async (data: CreateEventDTO) => {
             publishedAt: getPublishedAtForStatus(data.status),
       };
 
+      await clearCacheByPrefix("events:");
       return insertEvent(eventData);
 };
 
 export const getEventsService = async (pagination: Pagination) => {
+      const cacheKey = `events:${pagination.page}:${pagination.limit}`;
+
+      // Check Cache
+      const cached = await getCache<{
+            events: Event[];
+            pagination: ReturnType<typeof getPaginationMeta>;
+      }>(cacheKey);
+
+      if (cached) return cached;
+
+      // Cache Miss
       const [events, total] = await Promise.all([
             getEvents(pagination),
             countEvents(),
       ]);
 
-      return {
+      const res = {
             events,
             pagination: getPaginationMeta(pagination, total),
       };
+
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
 };
 
 export const getEventByIdService = async (id: string) => {
-      const event = await getEventById(id);
+      const cacheKey = `events:${id}`;
+      const cachedEvent = await getCache<Event>(cacheKey);
+      if (cachedEvent) return cachedEvent;
 
+      const event = await getEventById(id);
       if (!event) {
             throw new AppError(404, "Event not found");
       }
 
+      await setCache(cacheKey, event, DEFAULT_CACHE_TIME_TO_LIVE);
       return event;
 };
 
 export const getEventBySlugService = async (slug: string) => {
-      const event = await getEventBySlug(slug);
+      const cacheKey = `events:${slug}`;
+      const cachedEvent = await getCache<Event>(cacheKey);
+      if (cachedEvent) return cachedEvent;
 
+      const event = await getEventBySlug(slug);
       if (!event) {
             throw new AppError(404, "Event not found");
       }
 
+      await setCache(cacheKey, event, DEFAULT_CACHE_TIME_TO_LIVE);
       return event;
 };
 
-export const updateEventService = async (
-      id: string,
-      data: UpdateEventDTO,
-) => {
+export const updateEventService = async (id: string, data: UpdateEventDTO) => {
       const event = await getEventById(id);
 
       if (!event) {
@@ -112,7 +146,10 @@ export const updateEventService = async (
       }
 
       if (data.createdBy && !(await getAdminById(data.createdBy))) {
-            throw new AppError(400, "createdBy must reference an existing admin");
+            throw new AppError(
+                  400,
+                  "createdBy must reference an existing admin",
+            );
       }
 
       if (data.coverMediaId && !(await getMediaById(data.coverMediaId))) {
@@ -144,6 +181,8 @@ export const updateEventService = async (
 
       const updatedEvent = await updateEvent(id, eventUpdate);
 
+      await deleteCache(`events:${id}`);
+      await clearCacheByPrefix(`events:`);
       return updatedEvent;
 };
 
@@ -154,5 +193,7 @@ export const deleteEventService = async (id: string) => {
             throw new AppError(404, "Event not found");
       }
 
+      await deleteCache(`events:${id}`);
+      await clearCacheByPrefix(`events:`);
       await deleteEvent(id);
 };
