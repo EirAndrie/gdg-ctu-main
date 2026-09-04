@@ -14,7 +14,7 @@ const eventDateRule = <
       if (data.startAt && data.endAt && data.endAt < data.startAt) {
             ctx.addIssue({
                   code: "custom",
-                  message: "endAt must not be earlier than startAt",
+                  message: "End date/time cannot be earlier than start date/time.",
                   path: ["endAt"],
             });
       }
@@ -30,17 +30,33 @@ const BaseCreateEventSchema = createInsertSchema(events)
             publishedAt: true,
       })
       .extend({
-            title: z.string().trim().min(1),
-            slug: z.string().trim().min(1),
+            title: z
+                  .string()
+                  .trim()
+                  .min(1, { message: "Event title is required." }),
+            slug: z.string().trim().min(1, { message: "Slug is required." }),
             shortDescription: z.string().nullable().optional(),
             description: z.string().nullable().optional(),
-            coverMediaId: z.string().uuid().nullable().optional(),
+            coverMediaId: z
+                  .uuid()
+                  .nullable()
+                  .optional()
+                  .refine((val) => !val || val.length > 0, {
+                        message: "Cover media ID must be a valid UUID if provided.",
+                  }),
             location: z.string().trim().nullable().optional(),
-            registrationUrl: z.string().url().nullable().optional(),
+            locationEmbedUrl: z
+                  .url()
+                  .nullable()
+                  .optional()
+                  .refine((val) => !val || val.length > 0, {
+                        message: "Location embed URL must be a valid URL if provided.",
+                  }),
+            registrationEnabled: z.boolean().optional().default(false),
             startAt: z.coerce.date(),
             endAt: z.coerce.date(),
             status: z.enum(EVENT_STATUSES).default("draft"),
-            createdBy: z.string().uuid(),
+            createdBy: z.uuid({ message: "CreatedBy must be a valid UUID." }),
       });
 
 export const CreateEventSchema =

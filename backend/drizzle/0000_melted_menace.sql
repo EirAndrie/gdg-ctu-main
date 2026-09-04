@@ -115,6 +115,18 @@ CREATE TABLE "media" (
 	CONSTRAINT "media_public_id_unique" UNIQUE("public_id")
 );
 --> statement-breakpoint
+CREATE TABLE "member_terms" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"member_id" uuid NOT NULL,
+	"term_id" uuid NOT NULL,
+	"role" varchar(255) NOT NULL,
+	"display_order" integer DEFAULT 0 NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "member_terms_member_id_term_id_unique" UNIQUE("member_id","term_id")
+);
+--> statement-breakpoint
 CREATE TABLE "site_content" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"section_key" varchar(255) NOT NULL,
@@ -135,7 +147,6 @@ CREATE TABLE "team_members" (
 	"first_name" varchar(100) NOT NULL,
 	"last_name" varchar(100) NOT NULL,
 	"slug" varchar(255) NOT NULL,
-	"role" varchar(255) NOT NULL,
 	"bio" text,
 	"department" varchar(255) NOT NULL,
 	"program" varchar(255) NOT NULL,
@@ -151,6 +162,17 @@ CREATE TABLE "team_members" (
 	CONSTRAINT "team_members_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
+CREATE TABLE "terms" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(20) NOT NULL,
+	"start_date" date NOT NULL,
+	"end_date" date NOT NULL,
+	"is_current" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "terms_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
 ALTER TABLE "event_attendees" ADD CONSTRAINT "event_attendees_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "event_hosts" ADD CONSTRAINT "event_hosts_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "event_hosts" ADD CONSTRAINT "event_hosts_team_member_id_team_members_id_fk" FOREIGN KEY ("team_member_id") REFERENCES "public"."team_members"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -164,6 +186,8 @@ ALTER TABLE "media_collection_items" ADD CONSTRAINT "media_collection_items_medi
 ALTER TABLE "media_collections" ADD CONSTRAINT "media_collections_cover_media_id_media_id_fk" FOREIGN KEY ("cover_media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "media_collections" ADD CONSTRAINT "media_collections_created_by_admins_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "media" ADD CONSTRAINT "media_uploaded_by_admins_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member_terms" ADD CONSTRAINT "member_terms_member_id_team_members_id_fk" FOREIGN KEY ("member_id") REFERENCES "public"."team_members"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE "member_terms" ADD CONSTRAINT "member_terms_term_id_terms_id_fk" FOREIGN KEY ("term_id") REFERENCES "public"."terms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "site_content" ADD CONSTRAINT "site_content_media_id_media_id_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "site_content" ADD CONSTRAINT "site_content_updated_by_admins_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team_members" ADD CONSTRAINT "team_members_profile_media_id_media_id_fk" FOREIGN KEY ("profile_media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;

@@ -14,10 +14,17 @@ export const CreateMediaCollectionItemSchema = createInsertSchema(
 )
       .omit({ addedAt: true })
       .extend({
-            collectionId: z.uuid(),
-            mediaId: z.uuid(),
-            displayOrder: z.number().int().optional(),
-            caption: z.string().optional(),
+            collectionId: z.uuid({
+                  message: "Collection ID must be a valid UUID.",
+            }),
+            mediaId: z.uuid({ message: "Media ID must be a valid UUID." }),
+            displayOrder: z.number().int().nonnegative().optional(),
+            caption: z
+                  .string()
+                  .optional()
+                  .refine((val) => !val || val.trim().length > 0, {
+                        message: "Caption cannot be empty if provided.",
+                  }),
       });
 
 export const UpdateMediaCollectionItemSchema =

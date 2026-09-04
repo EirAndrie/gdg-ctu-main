@@ -10,20 +10,37 @@ export const CreateSiteContentSchema = createInsertSchema(siteContent)
             updatedAt: true,
       })
       .extend({
-            sectionKey: z.string().trim().min(1),
-            title: z.string().trim().min(1),
+            sectionKey: z
+                  .string()
+                  .trim()
+                  .min(1, { message: "Section key is required." }),
+            title: z.string().trim().min(1, { message: "Title is required." }),
             subtitle: z.string().nullable().optional(),
             body: z.string().nullable().optional(),
-            mediaId: z.string().uuid().nullable().optional(),
+            mediaId: z
+                  .uuid()
+                  .nullable()
+                  .optional()
+                  .refine((val) => !val || val.length > 0, {
+                        message: "Media ID must be a valid UUID if provided.",
+                  }),
             buttonText: z.string().trim().nullable().optional(),
-            buttonUrl: z.string().url().nullable().optional(),
+            buttonUrl: z
+                  .url()
+                  .nullable()
+                  .optional()
+                  .refine((val) => !val || val.length > 0, {
+                        message: "Button URL must be a valid URL if provided.",
+                  }),
             isActive: z.boolean().optional(),
-            updatedBy: z.string().uuid(),
+            updatedBy: z.uuid({ message: "UpdatedBy must be a valid UUID." }),
       });
 
 export const UpdateSiteContentSchema = CreateSiteContentSchema.partial()
       .extend({
-            updatedBy: z.string().uuid(),
+            updatedBy: z
+                  .string()
+                  .uuid({ message: "UpdatedBy must be a valid UUID." }),
       })
       .refine(
             (data) => Object.keys(data).length > 1,

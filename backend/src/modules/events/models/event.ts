@@ -3,6 +3,9 @@ import { pgTable } from "drizzle-orm/pg-core";
 import { admins } from "../../admins/models/admin";
 import { media } from "../../media/models/media";
 
+/**
+ * Event status enum – matches the Zod validation `EVENT_STATUSES`.
+ */
 export const EVENT_STATUSES = [
       "draft",
       "published",
@@ -13,38 +16,43 @@ export const EVENT_STATUSES = [
 export const events = pgTable("events", {
       id: uuid("id").defaultRandom().primaryKey(),
 
-      title: varchar("title", { length: 255 }).notNull(),
-      slug: varchar("slug", { length: 255 }).notNull().unique(),
+      // Required fields – Zod will return clear messages if missing/empty.
+      title: varchar("title", { length: 255 }).notNull(), // "Event title is required."
+      slug: varchar("slug", { length: 255 }).notNull().unique(), // "Slug is required."
 
       shortDescription: text("short_description"),
       description: text("description"),
 
-      coverMediaId: uuid("cover_media_id").references(() => media.id),
+      // Optional media reference – validation ensures a proper UUID when supplied.
+      coverMediaId: uuid("cover_media_id").references(() => media.id), // "Cover media ID must be a valid UUID if provided."
 
-      // Venue
+      // Venue information – optional strings.
       location: varchar("location", { length: 255 }),
       locationEmbedUrl: varchar("location_embed_url", { length: 2048 }),
 
-      // Registration
+      // Registration toggle.
       registrationEnabled: boolean("registration_enabled")
             .default(false)
             .notNull(),
 
-      startAt: timestamp("start_at").notNull(),
-      endAt: timestamp("end_at").notNull(),
+      // Required timestamps; Zod enforces chronological order.
+      startAt: timestamp("start_at").notNull(), // "Start date must be a valid date."
+      endAt: timestamp("end_at").notNull(), // "End date must be a valid date."
 
+      // Status must be one of the defined constants.
       status: varchar("status", {
             length: 50,
             enum: EVENT_STATUSES,
       })
             .default("draft")
-            .notNull(),
+            .notNull(), // "Status must be one of draft, published, archived, cancelled."
 
       publishedAt: timestamp("published_at"),
 
+      // Owner of the event – required admin reference.
       createdBy: uuid("created_by")
             .notNull()
-            .references(() => admins.id),
+            .references(() => admins.id), // "CreatedBy must be a valid UUID."
 
       createdAt: timestamp("created_at").defaultNow().notNull(),
       updatedAt: timestamp("updated_at").defaultNow().notNull(),

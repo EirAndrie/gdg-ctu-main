@@ -15,10 +15,19 @@ export const CreateAdminSchema = createInsertSchema(admins)
             updatedAt: true,
       })
       .extend({
-            email: z.email().trim().toLowerCase(),
-            passwordHash: z.string().min(20),
-            firstName: z.string().trim().min(1),
-            lastName: z.string().trim().min(1),
+            email: z
+                  .email({ error: "Please provide a valid email address." })
+                  .trim()
+                  .toLowerCase(),
+            passwordHash: z.string().min(20, {
+                  error: "Password hash must be at least 20 characters long.",
+            }),
+            firstName: z.string().trim().min(1, {
+                  error: "First name is required.",
+            }),
+            lastName: z.string().trim().min(1, {
+                  error: "Last name is required.",
+            }),
             isActive: z.boolean().optional(),
       });
 
