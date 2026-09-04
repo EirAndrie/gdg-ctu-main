@@ -13,7 +13,7 @@ BACKEND:
     - npm run build
 
 DATABASE:
-- Uses drizzle orm: https://orm.drizzle.team/
+- Uses drizzle orm: https://neon.com/
 - npm run db:generate //generates/writes postgreSql migration file
 - npm run db:migrate //migrate the generated postgre files
 
