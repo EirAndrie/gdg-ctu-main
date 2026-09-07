@@ -45,10 +45,8 @@ export async function syncCurrentAdminUser(
                   email;
 
             const admin = await upsertAdminByClerkId({
-                  clerkId: userId,
+                  id: userId,
                   email,
-                  name,
-                  profileImgUrl: clerkUser.imageUrl,
             });
 
             res.status(200).json({

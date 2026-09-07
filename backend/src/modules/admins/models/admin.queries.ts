@@ -39,53 +39,29 @@ export const getAdminByEmail = async (email: string) => {
       return admin;
 };
 
-export const getAdminByClerkId = async (clerkId: string) => {
-      return await db.select().from(admins).where(eq(admins.clerkId, clerkId));
-};
-
 /**
  * Insert a new admin or update an existing one based on Clerk ID.
  * Returns the inserted or updated admin record.
  */
 export const upsertAdminByClerkId = async (data: {
-      clerkId: string;
+      id: string; // Clerk ID as PK
       email: string;
-      name: string;
-      profileImgUrl?: string;
 }) => {
-      // Split the full name into first and last name components.
-      const [firstName, ...rest] = data.name.trim().split(/\s+/);
-      const lastName = rest.join(" ") || "";
-      // Placeholder password hash for admins managed via Clerk.
-      const placeholderPasswordHash = "clerk-generated-placeholder";
-
-      const existing = await getAdminByClerkId(data.clerkId);
-      if (existing.length > 0) {
-            // Update existing admin.
+      // Check if admin already exists by PK (Clerk ID)
+      const existing = await getAdminById(data.id);
+      if (existing) {
+            // Update email if changed
             const [admin] = await db
                   .update(admins)
-                  .set({
-                        email: data.email,
-                        firstName,
-                        lastName,
-                        profileImgUrl: data.profileImgUrl,
-                        updatedAt: new Date(),
-                  })
-                  .where(eq(admins.clerkId, data.clerkId))
+                  .set({ email: data.email, updatedAt: new Date() })
+                  .where(eq(admins.id, data.id))
                   .returning();
             return admin;
       }
-      // Insert new admin.
+      // Insert new admin with Clerk ID as PK
       const [admin] = await db
             .insert(admins)
-            .values({
-                  clerkId: data.clerkId,
-                  email: data.email,
-                  passwordHash: placeholderPasswordHash,
-                  firstName,
-                  lastName,
-                  profileImgUrl: data.profileImgUrl,
-            })
+            .values({ id: data.id, email: data.email })
             .returning();
       return admin;
 };

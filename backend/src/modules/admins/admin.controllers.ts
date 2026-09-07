@@ -3,7 +3,7 @@ import {
       getPagination,
       handleControllerError,
       validateBody,
-      validateUuid,
+      getStringParam,
 } from "../../utils/http";
 import {
       createAdminService,
@@ -24,7 +24,7 @@ export const createAdmin = async (req: Request, res: Response) => {
                   message: "Admin created successfully",
                   admin,
             });
-      } catch (error) {
+      } catch (error: any) {
             return handleControllerError(res, error, "Failed to create admin");
       }
 };
@@ -47,21 +47,21 @@ export const listAdmins = async (req: Request, res: Response) => {
 
 export const getAdmin = async (req: Request, res: Response) => {
       try {
-            const id = validateUuid(req.params.id);
+            const id = getStringParam(req.params.id, "id");
             const admin = await getAdminByIdService(id);
 
             return res.status(200).json({
                   success: true,
                   admin,
             });
-      } catch (error) {
+      } catch (error: any) {
             return handleControllerError(res, error, "Failed to get admin");
       }
 };
 
 export const updateAdmin = async (req: Request, res: Response) => {
       try {
-            const id = validateUuid(req.params.id);
+            const id = getStringParam(req.params.id, "id");
             const data = validateBody(UpdateAdminSchema, req.body);
             const admin = await updateAdminService(id, data);
 
@@ -70,21 +70,21 @@ export const updateAdmin = async (req: Request, res: Response) => {
                   message: "Admin updated successfully",
                   admin,
             });
-      } catch (error) {
+      } catch (error: any) {
             return handleControllerError(res, error, "Failed to update admin");
       }
 };
 
 export const removeAdmin = async (req: Request, res: Response) => {
       try {
-            const id = validateUuid(req.params.id);
+            const id = getStringParam(req.params.id, "id");
             await deleteAdminService(id);
 
             return res.status(200).json({
                   success: true,
                   message: "Admin deleted successfully",
             });
-      } catch (error) {
+      } catch (error: any) {
             return handleControllerError(res, error, "Failed to delete admin");
       }
 };

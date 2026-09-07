@@ -25,10 +25,18 @@ import {
 // Constant value for cache timeout
 const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
 
-// Prevent throwing admin password in response
 export const toAdminResponse = (admin: AdminRecord) => {
-      const { passwordHash: _passwordHash, ...publicAdmin } = admin;
-      return publicAdmin;
+      // Return only safe fields that are part of the public API.
+      // The AdminRecord already does not contain a password, but we
+      // explicitly pick the columns we want to expose. This keeps the
+      // shape stable for consumers and makes it easy to extend later.
+      return {
+            id: admin.id,
+            email: admin.email,
+            isActive: admin.isActive,
+            createdAt: admin.createdAt,
+            updatedAt: admin.updatedAt,
+      } as const;
 };
 
 export const createAdminService = async (data: CreateAdminDTO) => {
@@ -49,7 +57,7 @@ export const getAdminsService = async (pagination: Pagination) => {
 
       // Check Cache
       const cached = await getCache<{
-            admins: AdminRecord[];
+            admins: ReturnType<typeof toAdminResponse>[];
             pagination: ReturnType<typeof getPaginationMeta>;
       }>(cacheKey);
 
@@ -72,7 +80,8 @@ export const getAdminsService = async (pagination: Pagination) => {
 
 export const getAdminByIdService = async (id: string) => {
       const cacheKey = `admins:${id}`;
-      const cachedAdmin = await getCache<AdminRecord>(cacheKey);
+      const cachedAdmin =
+            await getCache<ReturnType<typeof toAdminResponse>>(cacheKey);
       if (cachedAdmin) return cachedAdmin;
 
       const admin = await getAdminById(id);

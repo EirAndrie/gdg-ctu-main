@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
-import { getAdminByClerkId } from "../admins/models/admin.queries";
+import { getAdminById } from "../admins/models/admin.queries";
 import { serializeAdmin } from "./serializeAdmin";
 import logger from "../../utils/logger";
 import { handleControllerError } from "../../utils/http";
@@ -14,7 +14,7 @@ export async function getCurrentAdminUser(req: Request, res: Response) {
                   return;
             }
 
-            const [user] = await getAdminByClerkId(userId);
+            const user = await getAdminById(userId);
             if (!user) {
                   res.status(404).json({
                         success: false,
