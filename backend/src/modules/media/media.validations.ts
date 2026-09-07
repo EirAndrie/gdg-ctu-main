@@ -20,8 +20,8 @@ export const CreateMediaSchema = createInsertSchema(media)
             originalFilename: true,
       })
       .extend({
-            uploadedBy: z.uuid({
-                  message: "Uploader ID must be a valid UUID.",
+            uploadedBy: z.string().trim().min(1, {
+                  message: "Uploader ID must be a non‑empty string.",
             }),
             altText: z.string().trim().nullable().optional(),
       });

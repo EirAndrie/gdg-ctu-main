@@ -9,7 +9,7 @@ export const mediaCollections = pgTable("media_collections", {
       slug: varchar("slug", { length: 255 }).notNull().unique(),
       description: text("description"),
       coverMediaId: uuid("cover_media_id").references(() => media.id),
-      createdBy: uuid("created_by")
+      createdBy: varchar("created_by")
             .notNull()
             .references(() => admins.id),
       createdAt: timestamp("created_at").defaultNow().notNull(),

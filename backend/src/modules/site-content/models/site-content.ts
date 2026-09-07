@@ -14,7 +14,7 @@ export const siteContent = pgTable("site_content", {
       buttonUrl: varchar("button_url", { length: 2048 }),
       isActive: boolean("is_active").default(true).notNull(),
       updatedAt: timestamp("updated_at").defaultNow().notNull(),
-      updatedBy: uuid("updated_by")
+      updatedBy: varchar("updated_by")
             .notNull()
             .references(() => admins.id),
 });

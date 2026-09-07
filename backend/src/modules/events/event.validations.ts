@@ -56,7 +56,12 @@ const BaseCreateEventSchema = createInsertSchema(events)
             startAt: z.coerce.date(),
             endAt: z.coerce.date(),
             status: z.enum(EVENT_STATUSES).default("draft"),
-            createdBy: z.uuid({ message: "CreatedBy must be a valid UUID." }),
+            createdBy: z
+                  .string({ error: "CreatedBy is required" })
+                  .trim()
+                  .min(1, {
+                        message: "CreatedBy must be a non‑empty string (Clerk ID).",
+                  }),
       });
 
 export const CreateEventSchema =

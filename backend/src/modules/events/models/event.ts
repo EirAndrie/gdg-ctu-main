@@ -49,10 +49,10 @@ export const events = pgTable("events", {
 
       publishedAt: timestamp("published_at"),
 
-      // Owner of the event – required admin reference.
-      createdBy: uuid("created_by")
+      // Stores Clerk ID directly as admin PK (string).
+      createdBy: varchar("created_by")
             .notNull()
-            .references(() => admins.id), // "CreatedBy must be a valid UUID."
+            .references(() => admins.id), // "CreatedBy must be a valid admin ID."
 
       createdAt: timestamp("created_at").defaultNow().notNull(),
       updatedAt: timestamp("updated_at").defaultNow().notNull(),
