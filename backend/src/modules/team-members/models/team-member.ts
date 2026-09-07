@@ -14,7 +14,6 @@ export const teamMembers = pgTable("team_members", {
       firstName: varchar("first_name", { length: 100 }).notNull(),
       lastName: varchar("last_name", { length: 100 }).notNull(),
       slug: varchar("slug", { length: 255 }).notNull().unique(),
-      role: varchar("role", { length: 255 }).notNull(),
       bio: text("bio"),
       department: varchar("department", { length: 255 }).notNull(),
       program: varchar("program", { length: 255 }).notNull(),

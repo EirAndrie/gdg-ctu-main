@@ -12,6 +12,7 @@ import siteContentRoutes from "./site-content/site-content.routes";
 import teamMemberRoutes from "./team-members/team-member.routes";
 import eventSpeakerRoutes from "./event-speakers/event-speaker.routes";
 import termsRoutes from "./terms/terms.routes";
+import memberTermsRoutes from "./member_terms/member-terms.routes";
 
 const router = Router();
 const protectedRouter = Router();
@@ -29,6 +30,7 @@ protectedRouter.use("/event-attendees", eventAttendeeRoutes);
 protectedRouter.use("/media-collections", mediaCollectionRoutes);
 protectedRouter.use("/media-collection-items", mediaCollectionItemRoutes);
 protectedRouter.use("/terms", termsRoutes);
+protectedRouter.use("/member-terms", memberTermsRoutes);
 router.use(protectedRouter);
 
 export default router;

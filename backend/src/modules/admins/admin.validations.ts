@@ -4,21 +4,22 @@ import { admins } from "./models/admin";
 
 export const AdminRecordSchema = createSelectSchema(admins);
 
-export const AdminSchema = AdminRecordSchema.omit({
-      passwordHash: true,
-});
+export const AdminSchema = AdminRecordSchema.omit({});
 
 export const CreateAdminSchema = createInsertSchema(admins)
       .omit({
-            id: true,
             createdAt: true,
             updatedAt: true,
       })
       .extend({
-            email: z.email().trim().toLowerCase(),
-            passwordHash: z.string().min(20),
-            firstName: z.string().trim().min(1),
-            lastName: z.string().trim().min(1),
+            id: z
+                  .string()
+                  .trim()
+                  .min(1, { message: "Clerk ID must be a non‑empty string." }),
+            email: z
+                  .email({ error: "Please provide a valid email address." })
+                  .trim()
+                  .toLowerCase(),
             isActive: z.boolean().optional(),
       });
 

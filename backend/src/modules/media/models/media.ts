@@ -39,7 +39,7 @@ export const media = pgTable("media", {
             length: 255,
       }),
 
-      uploadedBy: uuid("uploaded_by")
+      uploadedBy: varchar("uploaded_by")
             .notNull()
             .references(() => admins.id),
 

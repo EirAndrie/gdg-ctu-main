@@ -9,14 +9,16 @@ export const EventHostSchema = EventHostRecordSchema.omit({}); // no fields omit
 export const CreateEventHostSchema = createInsertSchema(eventHosts)
       .omit({ id: true })
       .extend({
-            eventId: z.string().uuid(),
-            teamMemberId: z.string().uuid(),
-            hostRole: z.string().min(1),
-            displayOrder: z.number().int().optional(),
+            eventId: z.uuid({ message: "Event ID must be a valid UUID." }),
+            teamMemberId: z.uuid({
+                  message: "Team member ID must be a valid UUID.",
+            }),
+            hostRole: z.string().min(1, { message: "Host role is required." }),
+            displayOrder: z.number().int().nonnegative().optional(),
       });
 
 export const UpdateEventHostSchema = CreateEventHostSchema.partial().refine(
-      data => Object.keys(data).length > 0,
+      (data) => Object.keys(data).length > 0,
       "At least one field is required",
 );
 

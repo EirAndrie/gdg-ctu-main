@@ -9,11 +9,19 @@ export const MediaCollectionSchema = MediaCollectionRecordSchema.omit({});
 export const CreateMediaCollectionSchema = createInsertSchema(mediaCollections)
       .omit({ id: true, createdAt: true, updatedAt: true })
       .extend({
-            name: z.string().min(1),
-            slug: z.string().min(1),
+            name: z
+                  .string()
+                  .min(1, { message: "Collection name is required." }),
+            slug: z.string().min(1, { message: "Slug is required." }),
             description: z.string().optional(),
-            coverMediaId: z.string().uuid().optional().nullable(),
-            createdBy: z.string().uuid(),
+            coverMediaId: z
+                  .uuid()
+                  .optional()
+                  .nullable()
+                  .refine((val) => !val || val.length > 0, {
+                        message: "Cover media ID must be a valid UUID if provided.",
+                  }),
+            createdBy: z.uuid({ message: "CreatedBy must be a valid UUID." }),
       });
 
 export const UpdateMediaCollectionSchema =
