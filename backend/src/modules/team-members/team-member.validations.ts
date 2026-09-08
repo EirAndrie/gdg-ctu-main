@@ -19,15 +19,7 @@ export const CreateTeamMemberSchema = createInsertSchema(teamMembers)
                   .trim()
                   .min(1, { message: "Last name is required." }),
             slug: z.string().trim().min(1, { message: "Slug is required." }),
-            role: z.string().trim().min(1, { message: "Role is required." }),
             bio: z.string().nullable().optional(),
-            profileMediaId: z
-                  .uuid()
-                  .nullable()
-                  .optional()
-                  .refine((val) => !val || val.length > 0, {
-                        message: "Profile Media ID must be a valid UUID if provided.",
-                  }),
             linkedinUrl: z
                   .url()
                   .nullable()

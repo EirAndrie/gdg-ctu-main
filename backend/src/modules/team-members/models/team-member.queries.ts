@@ -7,10 +7,18 @@ import { teamMembers } from "./team-member";
 export type TeamMemberRecord = typeof teamMembers.$inferSelect;
 export type NewTeamMemberRecord = typeof teamMembers.$inferInsert;
 
-export const insertTeamMember = async (data: NewTeamMemberRecord) => {
+export const insertTeamMember = async (
+      data: NewTeamMemberRecord,
+      profilePictureId: string,
+) => {
       const [teamMember] = await db
             .insert(teamMembers)
-            .values(data)
+            .values({
+                  ...data,
+                  ...(profilePictureId
+                        ? { profileMediaId: profilePictureId }
+                        : {}),
+            })
             .returning();
       return teamMember;
 };
