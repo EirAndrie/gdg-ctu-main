@@ -1,5 +1,14 @@
-// TODO: replace with Clerk's <SignIn /> component once ClerkProvider is
-// wired up in main.jsx (see ProtectedRoute.jsx).
+import { SignIn } from '@clerk/clerk-react';
+
 export default function AdminLogin() {
-  return <h1>Admin Login — placeholder</h1>;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '4rem' }}>
+      <SignIn
+        routing="path"
+        path="/admin/login"
+        signUpUrl="/admin/login"
+        afterSignInUrl="/admin"
+      />
+    </div>
+  );
 }
