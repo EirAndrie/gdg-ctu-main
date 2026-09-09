@@ -14,6 +14,8 @@ export default function Navbar() {
       <Link to="/events">Events</Link>
       {' | '}
       <Link to="/contact">Contact</Link>
+      {' | '}
+      <Link to="/admin">Admin</Link>
     </nav>
   );
 }

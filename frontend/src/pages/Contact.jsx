@@ -1,3 +1,8 @@
 export default function Contact() {
-  return <h1>Contact — placeholder</h1>;
+  return (
+    <main>
+      <h1>Contact</h1>
+      <p>Get in touch with GDGoC-CTU.</p>
+    </main>
+  );
 }

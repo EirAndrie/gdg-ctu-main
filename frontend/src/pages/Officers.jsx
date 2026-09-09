@@ -1,3 +1,8 @@
 export default function Officers() {
-  return <h1>Officers — placeholder</h1>;
+  return (
+    <main>
+      <h1>Officers</h1>
+      <p>Meet the GDGoC-CTU officers.</p>
+    </main>
+  );
 }

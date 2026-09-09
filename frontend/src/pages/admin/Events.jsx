@@ -1,3 +1,8 @@
 export default function AdminEvents() {
-  return <h1>Admin Events — placeholder</h1>;
+  return (
+    <main>
+      <h1>Admin Events</h1>
+      <p>Manage GDGoC-CTU events.</p>
+    </main>
+  );
 }

@@ -1,3 +1,8 @@
 export default function Events() {
-  return <h1>Events — placeholder</h1>;
+  return (
+    <main>
+      <h1>Events</h1>
+      <p>Discover upcoming GDGoC-CTU events.</p>
+    </main>
+  );
 }

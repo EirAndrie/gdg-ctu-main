@@ -1,3 +1,8 @@
 export default function Gallery() {
-  return <h1>Gallery — placeholder</h1>;
+  return (
+    <main>
+      <h1>Gallery</h1>
+      <p>Browse photos from GDGoC-CTU.</p>
+    </main>
+  );
 }

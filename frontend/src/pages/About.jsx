@@ -1,3 +1,8 @@
 export default function About() {
-  return <h1>About — placeholder</h1>;
+  return (
+    <main>
+      <h1>About</h1>
+      <p>Learn more about GDGoC-CTU.</p>
+    </main>
+  );
 }

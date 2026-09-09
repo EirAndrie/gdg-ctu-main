@@ -1,3 +1,8 @@
 export default function AdminDashboard() {
-  return <h1>Admin Dashboard — placeholder</h1>;
+  return (
+    <main>
+      <h1>Admin Dashboard</h1>
+      <p>Overview of GDGoC-CTU content.</p>
+    </main>
+  );
 }
