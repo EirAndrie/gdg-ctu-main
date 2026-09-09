@@ -33,7 +33,7 @@ Order matters: **backend first** (its URL is needed for `FR_ORIGIN` and `VITE_AP
 
 | Setting | Value |
 |---|---|
-| Root Directory | `frontend` |
+| Root Directory | `frontend` — set it on the import screen (Root Directory → Edit). For an existing project: Settings → General → Root Directory. CLI alternative: `cd frontend && vercel` (no dashboard setting needed) |
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
 | Env vars | `VITE_API_URL=https://<render-backend>/GDGoC-CTU-Main/v0.0.1`, `VITE_CLERK_PUBLISHABLE_KEY=<same Clerk app>` |
