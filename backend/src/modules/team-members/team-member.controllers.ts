@@ -18,6 +18,7 @@ import {
 } from "./team-member.services";
 import { UpdateTeamMemberSchema } from "./team-member.validations";
 import { NewTeamMemberRecord } from "./models/team-member.queries";
+import { extractMultipartPayload } from "../../utils/multiPartPayloadHelper";
 
 export const createTeamMemberWithImage = async (
       req: Request,
@@ -123,34 +124,13 @@ export const updateTeamMember = async (req: Request, res: Response) => {
             const id = validateUuid(req.params.id);
             const file = (req as any).file?.buffer;
 
-            let payload: any;
-            if (req.body.member) {
-                  try {
-                        payload = JSON.parse(req.body.member);
-                  } catch (e) {
-                        return res.status(400).json({
-                              success: false,
-                              message: "`member` JSON payload is malformed",
-                        });
-                  }
-            } else {
-                  // No JSON wrapper – treat the remaining body fields as the payload.
-                  // Copy req.body and remove helper fields that are not part of the
-                  // team‑member schema (e.g. `uploadedBy`).
-                  payload = { ...req.body };
-                  // Multer puts any non‑file fields here as strings.
-                  delete payload.uploadedBy; // not part of the DTO
-            }
-
-            // Ensure we have at least one update field; otherwise Zod will throw.
-            if (!payload || Object.keys(payload).length === 0) {
-                  return res.status(400).json({
-                        success: false,
-                        message: "At least one field is required",
-                  });
-            }
-
-            const data = validateBody(UpdateTeamMemberSchema, payload);
+            const memberPayload = extractMultipartPayload(req.body, "member", [
+                  "uploadedBy",
+            ]);
+            const memberData = validateBody(
+                  UpdateTeamMemberSchema,
+                  memberPayload,
+            );
 
             const clerkId = getClerkIdFromRequest(req);
             if (!clerkId) {
@@ -162,10 +142,11 @@ export const updateTeamMember = async (req: Request, res: Response) => {
 
             const updated = await updateTeamMemberService({
                   id,
-                  memberData: data,
+                  memberData: memberData,
                   file: file,
                   uploadedBy: clerkId ?? "",
             });
+
             return res.status(200).json({
                   success: true,
                   message: "Team member updated successfully",

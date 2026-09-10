@@ -29,6 +29,7 @@ import {
 } from "../../config/cloudinary/cloudinary.services";
 import { createMediaRecord } from "../../config/cloudinary/utils/cloudinary-media-data-helper";
 import { createMemberTermService } from "../member_terms/member-terms.services";
+import { cleanupReplacedMedia } from "../../utils/mediaHelper";
 // DTO for the multipart "create with image" endpoint.
 interface CreateTeamMemberWithImageDTO {
       memberData: NewTeamMemberRecord;
@@ -196,28 +197,15 @@ export const updateTeamMemberService = async (
 
             // Update the team‑member, ensuring we include the (possibly new) profileMediaId.
             const updatedTeamMember = await updateTeamMember(data.id, {
-                  ...data,
+                  ...data.memberData,
                   profileMediaId: newMediaId,
                   updatedAt: new Date(),
             });
 
-            // Delete previous profile image of the user
-            if (oldMediaId && oldMediaId !== newMediaId) {
-                  // Delete DB record
-                  const oldMedia = await getMediaByIdService(oldMediaId);
-                  if (oldMedia) {
-                        // First remove from Cloudinary
-                        await deleteMediaCloudinaryService(
-                              oldMedia.publicId,
-                              oldMedia.resourceType as any,
-                        );
-                        // Delete meta data
-                        await deleteMediaService(oldMedia.id);
-                  }
-            }
-
-            await deleteCache(`team-members:${data.id}`);
-            await clearCacheByPrefix("team-members:");
+            await Promise.all([
+                  cleanupReplacedMedia(oldMediaId, newMediaId),
+                  clearCacheByPrefix("team-members:"),
+            ]);
 
             return toTeamMemberResponse(updatedTeamMember);
       } catch (error) {
@@ -242,32 +230,9 @@ export const deleteTeamMemberService = async (id: string) => {
             );
       }
 
-      await deleteTeamMember(id);
-      await deleteCache(`team-members:${id}`);
-      await clearCacheByPrefix("team-members:");
-
-      // Handle Media Cleanup
-      if (teamMember.profileMediaId) {
-            try {
-                  // Retrieve the media details
-                  const mediaRecord = await getMediaByIdService(
-                        teamMember.profileMediaId,
-                  );
-
-                  if (mediaRecord) {
-                        // Delete the media meta data from the database
-                        await deleteMediaService(teamMember.profileMediaId);
-                        // Delete the physical file from Cloudinary
-                        await deleteMediaCloudinaryService(
-                              mediaRecord.publicId,
-                              mediaRecord.resourceType as any,
-                        );
-                  }
-            } catch (error) {
-                  throw new AppError(
-                        401,
-                        "An Error has Occured: Failed to delete team member data",
-                  );
-            }
-      }
+      deleteTeamMember(id);
+      await Promise.all([
+            cleanupReplacedMedia(teamMember.profileMediaId, null),
+            clearCacheByPrefix("team-members:"),
+      ]);
 };
