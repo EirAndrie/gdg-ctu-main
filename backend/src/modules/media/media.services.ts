@@ -107,10 +107,7 @@ export const deleteMediaService = async (id: string) => {
             );
       }
 
-      // Delete from Cloudinary using publicId and resourceType
-      await deleteMediaCloudinaryService(media.publicId, media.resourceType);
-
-      await deleteCache(`media:${id}`);
-      await clearCacheByPrefix("media:");
       await deleteMedia(id);
+      await deleteMediaCloudinaryService(media.publicId, media.resourceType);
+      await clearCacheByPrefix("media:");
 };
