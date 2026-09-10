@@ -36,6 +36,7 @@ import {
       deleteCache,
       clearCacheByPrefix,
 } from "../../config/redis/redis.services";
+import { cleanupReplacedMedia } from "../../utils/mediaHelper";
 
 // Constant value for cache timeout
 const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
@@ -197,56 +198,53 @@ export const updateEventService = async (data: UpdateEventDataWithImageDTO) => {
 
       // Keep track of existing cover media so we can clean up if replaced
       const oldCoverMediaId = event.coverMediaId ?? undefined;
-      let newCoverMediaId = oldCoverMediaId;
 
-      // If a new image file is supplied, upload it and create a new media record.
-      if (data.file && data.uploadedBy) {
-            const uploadResult = await uploadMedia(data.file, {
-                  folder: "media",
-                  resourceType: "image",
-            });
-            const mediaData = createMediaRecord(uploadResult, data.uploadedBy);
-            const newMedia = await createMediaService(mediaData);
-            newCoverMediaId = newMedia.id;
-      }
+      try {
+            let newCoverMediaId = oldCoverMediaId;
 
-      // Prepare the update payload, including possibly new coverMediaId
-      const eventUpdate: Partial<NewEventRecord> = {
-            ...data,
-            coverMediaId: newCoverMediaId,
-            updatedAt: new Date(),
-      };
-
-      const publishedAt = getPublishedAtForStatus(
-            data.event.status,
-            event.publishedAt,
-      );
-
-      if (publishedAt !== undefined) {
-            eventUpdate.publishedAt = publishedAt;
-      }
-
-      const updatedEvent = await updateEvent(data.id, eventUpdate);
-
-      // After successful update, delete the old media if it was replaced and no longer referenced
-      if (oldCoverMediaId && oldCoverMediaId !== newCoverMediaId) {
-            // Ensure no other records reference the old media before deletion
-            const hasRefs = await mediaHasReferences(oldCoverMediaId);
-            if (!hasRefs) {
-                  const oldMedia = await getMediaByIdService(oldCoverMediaId);
-                  if (oldMedia) {
-                        await deleteMediaCloudinaryService(
-                              oldMedia.publicId,
-                              oldMedia.resourceType as any,
-                        );
-                        await deleteMediaService(oldCoverMediaId);
-                  }
+            // If a new image file is supplied, upload it and create a new media record.
+            if (data.file && data.uploadedBy) {
+                  const uploadResult = await uploadMedia(data.file, {
+                        folder: "media",
+                        resourceType: "image",
+                  });
+                  const mediaData = createMediaRecord(
+                        uploadResult,
+                        data.uploadedBy,
+                  );
+                  const newMedia = await createMediaService(mediaData);
+                  newCoverMediaId = newMedia.id;
             }
-      }
 
-      await deleteCache(`events:${data.id}`);
-      await clearCacheByPrefix(`events:`);
-      return updatedEvent;
+            // Prepare the update payload, including possibly new coverMediaId
+            const eventUpdate: Partial<NewEventRecord> = {
+                  ...data.event,
+                  coverMediaId: newCoverMediaId,
+                  updatedAt: new Date(),
+            };
+
+            const publishedAt = getPublishedAtForStatus(
+                  data.event.status,
+                  event.publishedAt,
+            );
+
+            if (publishedAt !== undefined) {
+                  eventUpdate.publishedAt = publishedAt;
+            }
+
+            const updatedEvent = await updateEvent(data.id, eventUpdate);
+            await Promise.all([
+                  cleanupReplacedMedia(oldCoverMediaId, newCoverMediaId),
+                  clearCacheByPrefix(`events:`),
+            ]);
+
+            return updatedEvent;
+      } catch (error) {
+            throw new AppError(
+                  401,
+                  "An Error has Occured: Failed to update team member data",
+            );
+      }
 };
 
 export const deleteEventService = async (id: string) => {
@@ -256,7 +254,9 @@ export const deleteEventService = async (id: string) => {
             throw new AppError(404, "Event not found");
       }
 
-      await deleteCache(`events:${id}`);
-      await clearCacheByPrefix(`events:`);
-      await deleteEvent(id);
+      deleteEvent(id);
+      await Promise.all([
+            cleanupReplacedMedia(event.coverMediaId, null),
+            clearCacheByPrefix(`events:`),
+      ]);
 };

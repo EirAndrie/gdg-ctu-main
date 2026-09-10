@@ -16,12 +16,8 @@ import {
       getEventsService,
       updateEventService,
 } from "./event.services";
-import { NewEventRecord } from "./models/event.queries";
-import {
-      CreateEventDTO,
-      CreateEventSchema,
-      UpdateEventSchema,
-} from "./event.validations";
+import { CreateEventSchema, UpdateEventSchema } from "./event.validations";
+import { extractMultipartPayload } from "../../utils/multiPartPayloadHelper";
 
 export const createEvent = async (req: Request, res: Response) => {
       try {
@@ -114,7 +110,13 @@ export const getEventBySlug = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
       try {
             const id = validateUuid(req.params.id);
-            const file = (req as any).file; // No file validation since media is optional upon update
+            const file = (req as any).file?.buffer; // No file validation since media is optional upon update
+
+            const eventPayload = extractMultipartPayload(req.body, "event", [
+                  "uploadedBy",
+            ]);
+            const eventData = validateBody(UpdateEventSchema, eventPayload);
+
             const clerkId = getClerkIdFromRequest(req);
             if (file && !clerkId) {
                   return res.status(401).json({
@@ -123,11 +125,10 @@ export const updateEvent = async (req: Request, res: Response) => {
                   });
             }
 
-            const data = validateBody(UpdateEventSchema, req.body);
             const updatedEvent = await updateEventService({
                   id,
-                  event: data,
-                  file,
+                  event: eventData,
+                  file: file,
                   uploadedBy: clerkId,
             });
 
