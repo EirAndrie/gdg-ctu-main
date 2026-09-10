@@ -19,7 +19,15 @@ export const CreateTeamMemberSchema = createInsertSchema(teamMembers)
                   .trim()
                   .min(1, { message: "Last name is required." }),
             slug: z.string().trim().min(1, { message: "Slug is required." }),
+            roleTitle: z
+                  .string()
+                  .trim()
+                  .min(1, { message: "Role title is required." })
+                  .max(80, { message: "Role title must be at most 80 characters." }),
             bio: z.string().nullable().optional(),
+            department: z.string().trim().nullable().optional(),
+            program: z.string().trim().nullable().optional(),
+            yearSection: z.string().trim().nullable().optional(),
             linkedinUrl: z
                   .url()
                   .nullable()
@@ -42,6 +50,7 @@ export const CreateTeamMemberSchema = createInsertSchema(teamMembers)
                         message: "Website URL must be a valid URL if provided.",
                   }),
             displayOrder: z.number().int().nonnegative().optional(),
+            isFeatured: z.boolean().optional(),
             isActive: z.boolean().optional(),
       });
 

@@ -1,6 +1,9 @@
 import { asc, count, eq, and } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
+import { activeOnly } from "../../../utils/activeScope";
+import { mediaCollections } from "../../media-collections/models/media-collection";
+import { media } from "../../media/models/media";
 import { mediaCollectionItems } from "./media-collection-item";
 
 export type MediaCollectionItemRecord =
@@ -48,6 +51,44 @@ export const getMediaCollectionItem = async (
             );
       return item;
 };
+
+/** Ordered items for one album (public detail view). */
+export const getItemsByCollectionId = async (collectionId: string) =>
+      db
+            .select()
+            .from(mediaCollectionItems)
+            .where(eq(mediaCollectionItems.collectionId, collectionId))
+            .orderBy(asc(mediaCollectionItems.displayOrder));
+
+/**
+ * Featured-photo strip across active albums (cap enforced by caller, max 8).
+ * Returns only the fields the public mapper needs — no internal FK ids.
+ */
+export const getFeaturedCollectionItems = async (limit = 8) =>
+      db
+            .select({
+                  albumSlug: mediaCollections.slug,
+                  albumTitle: mediaCollections.name,
+                  imageUrl: media.secureUrl,
+                  itemAlt: mediaCollectionItems.altText,
+                  mediaAlt: media.altText,
+                  caption: mediaCollectionItems.caption,
+                  order: mediaCollectionItems.displayOrder,
+            })
+            .from(mediaCollectionItems)
+            .innerJoin(
+                  mediaCollections,
+                  eq(mediaCollectionItems.collectionId, mediaCollections.id),
+            )
+            .innerJoin(media, eq(mediaCollectionItems.mediaId, media.id))
+            .where(
+                  and(
+                        eq(mediaCollectionItems.isFeatured, true),
+                        activeOnly(mediaCollections.isActive),
+                  ),
+            )
+            .orderBy(asc(mediaCollectionItems.displayOrder))
+            .limit(limit);
 
 export const deleteMediaCollectionItem = async (
       collectionId: string,

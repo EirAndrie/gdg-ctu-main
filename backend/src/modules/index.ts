@@ -13,6 +13,13 @@ import teamMemberRoutes from "./team-members/team-member.routes";
 import eventSpeakerRoutes from "./event-speakers/event-speaker.routes";
 import termsRoutes from "./terms/terms.routes";
 import memberTermsRoutes from "./member_terms/member-terms.routes";
+import partnerRoutes from "./partners/partner.routes";
+import healthRoutes from "./health/health.routes";
+import publicTeamRoutes from "./public/public-team.routes";
+import publicEventsRoutes from "./public/public-events.routes";
+import publicContentRoutes from "./public/public-content.routes";
+import publicPartnersRoutes from "./public/public-partners.routes";
+import publicGalleryRoutes from "./public/public-gallery.routes";
 
 const router = Router();
 const protectedRouter = Router();
@@ -31,6 +38,26 @@ protectedRouter.use("/media-collections", mediaCollectionRoutes);
 protectedRouter.use("/media-collection-items", mediaCollectionItemRoutes);
 protectedRouter.use("/terms", termsRoutes);
 protectedRouter.use("/member-terms", memberTermsRoutes);
+protectedRouter.use("/partners", partnerRoutes);
 router.use(protectedRouter);
+
+// Public (no auth) — CMS reads for the website. A new public entity is one
+// entry in `publicMounts`; paths stay identical.
+const publicMounts = [
+      ["/health", healthRoutes],
+      ["/public/team", publicTeamRoutes],
+      ["/public/events", publicEventsRoutes],
+      ["/public/content", publicContentRoutes],
+      ["/public/partners", publicPartnersRoutes],
+      ["/public/gallery", publicGalleryRoutes],
+] as const;
+
+export function registerPublicRoutes(target: Router) {
+      for (const [path, subRouter] of publicMounts) {
+            target.use(path, subRouter);
+      }
+}
+
+registerPublicRoutes(router);
 
 export default router;

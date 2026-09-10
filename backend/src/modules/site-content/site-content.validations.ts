@@ -2,6 +2,15 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { siteContent } from "./models/site-content";
 
+/** Fixed CMS section keys (spec §4.7) — no custom keys in V1. */
+export const SECTION_KEYS = [
+      "hero",
+      "about",
+      "community",
+      "cta",
+      "footer",
+] as const;
+
 export const SiteContentSchema = createSelectSchema(siteContent);
 
 export const CreateSiteContentSchema = createInsertSchema(siteContent)
@@ -10,10 +19,10 @@ export const CreateSiteContentSchema = createInsertSchema(siteContent)
             updatedAt: true,
       })
       .extend({
-            sectionKey: z
-                  .string()
-                  .trim()
-                  .min(1, { message: "Section key is required." }),
+            sectionKey: z.enum(SECTION_KEYS, {
+                  message:
+                        "Section key must be one of hero, about, community, cta, footer.",
+            }),
             title: z.string().trim().min(1, { message: "Title is required." }),
             subtitle: z.string().nullable().optional(),
             body: z.string().nullable().optional(),
@@ -33,22 +42,21 @@ export const CreateSiteContentSchema = createInsertSchema(siteContent)
                         message: "Button URL must be a valid URL if provided.",
                   }),
             isActive: z.boolean().optional(),
+            // Clerk IDs are opaque strings (e.g. "user_..."), not UUIDs.
             updatedBy: z
-                  .string({ error: "UpdatedBy is required" })
+                  .string()
                   .trim()
-                  .min(1, {
-                        message: "UpdatedBy must be a non‑empty string (Clerk ID).",
-                  }),
+                  .min(1, { message: "UpdatedBy must be a valid Clerk ID." }),
       });
 
 export const UpdateSiteContentSchema = CreateSiteContentSchema.partial()
       .extend({
+            // Clerk IDs are opaque strings (e.g. "user_..."), not UUIDs.
             updatedBy: z
-                  .string({ error: "UpdatedBy is required" })
+                  .string()
                   .trim()
-                  .min(1, {
-                        message: "UpdatedBy must be a non‑empty string (Clerk ID).",
-                  }),
+                  .min(1, { message: "UpdatedBy must be a valid Clerk ID." })
+                  .optional(),
       })
       .refine(
             (data) => Object.keys(data).length > 1,

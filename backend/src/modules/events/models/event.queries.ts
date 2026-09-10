@@ -1,4 +1,4 @@
-import { count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lt } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
 import { events } from "./event";
@@ -35,6 +35,64 @@ export const getEventBySlug = async (slug: string) => {
             .from(events)
             .where(eq(events.slug, slug));
       return event;
+};
+
+export const getPublishedEventBySlug = async (slug: string) => {
+      const [event] = await db
+            .select()
+            .from(events)
+            .where(and(eq(events.slug, slug), eq(events.status, "published")));
+      return event;
+};
+
+/** Public upcoming feed: published + endAt >= now, soonest first. */
+export const getPublicUpcomingEvents = async (limit = 50) =>
+      db
+            .select()
+            .from(events)
+            .where(
+                  and(
+                        eq(events.status, "published"),
+                        gte(events.endAt, new Date()),
+                  ),
+            )
+            .orderBy(asc(events.startAt))
+            .limit(limit);
+
+/** Public past feed: published + endAt < now, most recent first. */
+export const getPublicPastEvents = async (limit = 50) =>
+      db
+            .select()
+            .from(events)
+            .where(
+                  and(eq(events.status, "published"), lt(events.endAt, new Date())),
+            )
+            .orderBy(desc(events.endAt))
+            .limit(limit);
+
+/** Public featured feed: published + is_featured, max 3. */
+export const getPublicFeaturedEvents = async (limit = 3) =>
+      db
+            .select()
+            .from(events)
+            .where(
+                  and(
+                        eq(events.status, "published"),
+                        eq(events.isFeatured, true),
+                  ),
+            )
+            .orderBy(asc(events.startAt))
+            .limit(limit);
+
+/**
+ * Public recent feed (Home, Q24=b): upcoming-first up to `limit`,
+ * backfilling with past events when upcoming is short.
+ */
+export const getPublicRecentEvents = async (limit = 3) => {
+      const upcoming = await getPublicUpcomingEvents(limit);
+      if (upcoming.length >= limit) return upcoming.slice(0, limit);
+      const past = await getPublicPastEvents(limit - upcoming.length);
+      return [...upcoming, ...past];
 };
 
 export const updateEvent = async (

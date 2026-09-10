@@ -1,6 +1,5 @@
 import { AppError } from "../../utils/http";
 import { getPaginationMeta, Pagination } from "../../utils/pagination";
-import { getAdminById } from "../admins/models/admin.queries";
 import { getMediaById } from "../media/models/media.queries";
 import {
       countSiteContent,
@@ -17,13 +16,11 @@ import {
 } from "./site-content.validations";
 
 const validateSiteContentReferences = async (
-      data: Pick<CreateSiteContentDTO, "updatedBy"> &
-            Partial<Pick<CreateSiteContentDTO, "mediaId">>,
+      data: Partial<Pick<CreateSiteContentDTO, "updatedBy" | "mediaId">>,
 ) => {
-      if (!(await getAdminById(data.updatedBy))) {
-            throw new AppError(400, "updatedBy must reference an existing admin");
-      }
-
+      // Tolerant updatedBy: a valid Clerk string never 400s here. The normal
+      // flow (POST /auth/sync first) guarantees the admin row exists and the
+      // DB foreign key remains the final guard for truly invalid references.
       if (data.mediaId && !(await getMediaById(data.mediaId))) {
             throw new AppError(400, "mediaId must reference existing media");
       }
@@ -89,16 +86,11 @@ export const updateSiteContentService = async (
       }
 
       if (data.sectionKey && data.sectionKey !== content.sectionKey) {
-            const existingContent = await getSiteContentBySectionKey(
-                  data.sectionKey,
+            // sectionKey is immutable (spec §4.7) — fixed keys, no renames.
+            throw new AppError(
+                  400,
+                  "sectionKey is immutable and cannot be changed",
             );
-
-            if (existingContent) {
-                  throw new AppError(
-                        409,
-                        "Site content sectionKey already exists",
-                  );
-            }
       }
 
       await validateSiteContentReferences(data);

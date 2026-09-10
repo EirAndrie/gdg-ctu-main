@@ -25,6 +25,11 @@ export const CreateMediaCollectionItemSchema = createInsertSchema(
                   .refine((val) => !val || val.trim().length > 0, {
                         message: "Caption cannot be empty if provided.",
                   }),
+            altText: z
+                  .string()
+                  .trim()
+                  .min(1, { message: "Alt text is required." }),
+            isFeatured: z.boolean().optional(),
       });
 
 export const UpdateMediaCollectionItemSchema =

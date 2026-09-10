@@ -1,6 +1,7 @@
-import { asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
+import { activeByKey, activeOnly } from "../../../utils/activeScope";
 import { eventSpeakers } from "../../event-speakers/models/event-speaker";
 import { teamMembers } from "./team-member";
 
@@ -49,6 +50,26 @@ export const getTeamMemberBySlug = async (slug: string) => {
             .select()
             .from(teamMembers)
             .where(eq(teamMembers.slug, slug));
+      return teamMember;
+};
+
+/** Public feed: active members only (safe fields projected by the controller). */
+export const getActiveTeamMembers = async (featuredOnly = false) => {
+      const where = featuredOnly
+            ? and(activeOnly(teamMembers.isActive), eq(teamMembers.isFeatured, true))
+            : activeOnly(teamMembers.isActive);
+      return db
+            .select()
+            .from(teamMembers)
+            .where(where)
+            .orderBy(asc(teamMembers.displayOrder), asc(teamMembers.lastName));
+};
+
+export const getActiveTeamMemberBySlug = async (slug: string) => {
+      const [teamMember] = await db
+            .select()
+            .from(teamMembers)
+            .where(activeByKey(teamMembers.slug, teamMembers.isActive, slug));
       return teamMember;
 };
 
