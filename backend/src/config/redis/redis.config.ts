@@ -3,9 +3,25 @@ import logger from "../../utils/logger";
 import { AppError } from "../../utils/http";
 
 /**
- * The sole purpose of this function is to test connectivity to redis
+ * Returns true iff REDIS_URL is configured (non-empty string).
+ * When false, Redis is treated as disabled and all cache operations
+ * become graceful no-ops so the server can boot without Redis.
+ */
+export function isRedisEnabled(): boolean {
+      const url = process.env.REDIS_URL;
+      return typeof url === "string" && url.trim().length > 0;
+}
+
+/**
+ * The sole purpose of this function is to test connectivity to redis.
+ * No-ops when REDIS_URL is not configured so the server can boot
+ * without Redis.
  */
 export const testRedisConnection = async () => {
+      if (!isRedisEnabled()) {
+            logger.warn("Redis disabled - skipping connection test");
+            return false;
+      }
       try {
             const client = createClient({
                   url: process.env.REDIS_URL,
