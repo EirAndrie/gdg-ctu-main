@@ -54,7 +54,7 @@ export default function App() {
         </Route>
 
         {/* Admin routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/login/*" element={<AdminLogin />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminShell />}>
             <Route path="/admin" element={<AdminDashboard />} />

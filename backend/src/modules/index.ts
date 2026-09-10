@@ -25,7 +25,7 @@ const router = Router();
 const protectedRouter = Router();
 
 protectedRouter.use(requireAuth);
-router.use("/admins", adminRoutes);
+protectedRouter.use("/admins", adminRoutes);
 protectedRouter.use("/auth", authRoutes);
 protectedRouter.use("/team-members", teamMemberRoutes);
 protectedRouter.use("/events", eventRoutes);
