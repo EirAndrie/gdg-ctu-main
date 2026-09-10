@@ -1,6 +1,7 @@
-import { and, asc, count, eq } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
+import { activeByKey, activeOnly } from "../../../utils/activeScope";
 import { siteContent } from "./site-content";
 
 export type SiteContentRecord = typeof siteContent.$inferSelect;
@@ -48,7 +49,7 @@ export const getActiveSiteContentList = async () =>
       db
             .select()
             .from(siteContent)
-            .where(eq(siteContent.isActive, true))
+            .where(activeOnly(siteContent.isActive))
             .orderBy(asc(siteContent.sectionKey));
 
 export const getActiveSiteContentBySectionKey = async (
@@ -58,9 +59,10 @@ export const getActiveSiteContentBySectionKey = async (
             .select()
             .from(siteContent)
             .where(
-                  and(
-                        eq(siteContent.sectionKey, sectionKey),
-                        eq(siteContent.isActive, true),
+                  activeByKey(
+                        siteContent.sectionKey,
+                        siteContent.isActive,
+                        sectionKey,
                   ),
             );
       return content;

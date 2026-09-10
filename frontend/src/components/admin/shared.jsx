@@ -171,3 +171,31 @@ export function Toggle({ id, label, checked, onChange, hint }) {
     </div>
   );
 }
+
+/**
+ * Shared admin list shell: loading → error → empty → table/content.
+ * Used by admin/Events.jsx, admin/Team.jsx, admin/Gallery.jsx — do not
+ * re-implement these four states inline in list pages.
+ */
+export function AdminListPage({
+  loading,
+  loadingLabel = 'Loading…',
+  error,
+  requestId,
+  onRetry,
+  errorContext,
+  isEmpty,
+  empty,
+  children,
+}) {
+  return (
+    <>
+      {loading ? <LoadingSkeleton label={loadingLabel} /> : null}
+      {!loading && error ? (
+        <ErrorState error={error} requestId={requestId} onRetry={onRetry} context={errorContext} />
+      ) : null}
+      {!loading && !error && isEmpty ? empty : null}
+      {!loading && !error && !isEmpty ? children : null}
+    </>
+  );
+}

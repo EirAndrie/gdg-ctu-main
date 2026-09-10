@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom';
 
+/** Shared <img onError> fallback — hides broken legacy/CMS images. Import this instead of redefining it per page. */
+export function hideImage(e) {
+  e.currentTarget.style.display = 'none';
+}
+
 /** Loading skeletons for CMS-fed public strips (layout preserved while fetching). */
 export function FeedSkeleton({ count = 3, label = 'Loading…' }) {
   return (

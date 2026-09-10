@@ -1,9 +1,5 @@
 import { TIER_ORDER, publicApi, sortPartners, usePublicFeed } from '../api/public.js';
-import { FeedError, FeedSkeleton, friendlyFeedError } from '../components/FeedStates.jsx';
-
-function hideImage(e) {
-  e.currentTarget.style.display = 'none';
-}
+import { FeedError, FeedSkeleton, friendlyFeedError, hideImage } from '../components/FeedStates.jsx';
 
 const TIER_LABELS = {
   platinum: 'Platinum Partners',

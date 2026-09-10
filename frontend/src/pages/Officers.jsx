@@ -1,5 +1,5 @@
 import { mapMember, publicApi, usePublicFeed } from '../api/public.js';
-import { FeedError, FeedSkeleton, friendlyFeedError } from '../components/FeedStates.jsx';
+import { FeedError, FeedSkeleton, friendlyFeedError, hideImage } from '../components/FeedStates.jsx';
 
 const legacyOfficers = [
   { name: 'Tyrone Tabornal', role: 'Campus Organizer', department: 'Executive Board', sy: 'S.Y. 2025-2026', image: '/legacy-images/Campus Organizer.jpg' },
@@ -10,10 +10,6 @@ const legacyOfficers = [
   { name: 'Lucy Jean Bansag', role: 'Volunteer Management Lead', department: 'Operations', sy: 'S.Y. 2025-2026', image: '/legacy-images/Volunteer Management Lead - Copy.jpg' },
   { name: 'Ma. Cristine Bierba', role: 'Event Lead', department: 'Operations', sy: 'S.Y. 2025-2026', image: '/legacy-images/Event Lead.jpg' },
 ];
-
-function hideImage(e) {
-  e.currentTarget.style.display = 'none';
-}
 
 function OfficerCard({ name, role, meta, image, alt }) {
   return (

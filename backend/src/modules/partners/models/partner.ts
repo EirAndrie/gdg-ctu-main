@@ -1,5 +1,6 @@
 import { boolean, integer, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
+import { admins } from "../../admins/models/admin";
 import { media } from "../../media/models/media";
 
 /**
@@ -24,6 +25,13 @@ export const partners = pgTable("partners", {
       description: text("description"),
       displayOrder: integer("display_order").default(0).notNull(),
       isActive: boolean("is_active").default(true).notNull(),
+      // Audit trail (spec §7) — Clerk IDs as admin PKs, same as other tables.
+      createdBy: varchar("created_by")
+            .notNull()
+            .references(() => admins.id),
+      updatedBy: varchar("updated_by")
+            .notNull()
+            .references(() => admins.id),
       createdAt: timestamp("created_at").defaultNow().notNull(),
       updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

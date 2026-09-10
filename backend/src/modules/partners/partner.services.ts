@@ -13,7 +13,10 @@ import {
 } from "./models/partner.queries";
 import { CreatePartnerDTO, UpdatePartnerDTO } from "./partner.validations";
 
-export const createPartnerService = async (data: CreatePartnerDTO) => {
+export const createPartnerService = async (
+      data: CreatePartnerDTO,
+      clerkId: string,
+) => {
       if (await getPartnerBySlug(data.slug)) {
             throw new AppError(409, "Partner slug already exists");
       }
@@ -22,7 +25,12 @@ export const createPartnerService = async (data: CreatePartnerDTO) => {
             throw new AppError(400, "logoMediaId must reference existing media");
       }
 
-      return insertPartner({ ...data, updatedAt: new Date() });
+      return insertPartner({
+            ...data,
+            createdBy: clerkId,
+            updatedBy: clerkId,
+            updatedAt: new Date(),
+      });
 };
 
 export const getPartnersService = async (pagination: Pagination) => {
@@ -59,6 +67,7 @@ export const getPublicPartnersService = async () => getActivePartners();
 export const updatePartnerService = async (
       id: string,
       data: UpdatePartnerDTO,
+      clerkId: string,
 ) => {
       const partner = await getPartnerById(id);
       if (!partner) {
@@ -76,7 +85,11 @@ export const updatePartnerService = async (
             throw new AppError(400, "logoMediaId must reference existing media");
       }
 
-      return updatePartner(id, { ...data, updatedAt: new Date() });
+      return updatePartner(id, {
+            ...data,
+            updatedBy: clerkId,
+            updatedAt: new Date(),
+      });
 };
 
 export const deletePartnerService = async (id: string) => {

@@ -11,11 +11,28 @@ import { AppError, getStringParam, handleControllerError } from "../../utils/htt
 
 /**
  * Public gallery feed — no auth, active albums only, items ordered.
- * Featured strip capped at 10 (UI target 8, hard cap 10).
+ * Featured strip capped at 8 (spec §4.6/§5).
  */
 const router = Router();
 
-const MAX_FEATURED = 10;
+const MAX_FEATURED = 8;
+
+const toPublicPhoto = (r: {
+      albumSlug: string;
+      albumTitle: string;
+      imageUrl: string;
+      itemAlt: string | null;
+      mediaAlt: string | null;
+      caption: string | null;
+      order: number | null;
+}) => ({
+      albumSlug: r.albumSlug,
+      albumTitle: r.albumTitle,
+      imageUrl: r.imageUrl,
+      alt: r.itemAlt ?? r.mediaAlt ?? r.caption ?? "",
+      caption: r.caption,
+      order: r.order ?? 0,
+});
 
 router.get("/albums", async (_req, res) => {
       try {
@@ -47,7 +64,9 @@ router.get("/featured", async (req, res) => {
                   ? Math.min(Math.max(requested, 1), MAX_FEATURED)
                   : 8;
             const photos = await getFeaturedCollectionItems(limit);
-            return res.status(200).json({ success: true, photos });
+            return res
+                  .status(200)
+                  .json({ success: true, photos: photos.map(toPublicPhoto) });
       } catch (error) {
             return handleControllerError(
                   res,

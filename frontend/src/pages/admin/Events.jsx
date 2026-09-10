@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { eventsApi, getId } from '../../api/resources.js';
 import { timeAgo, useAdminList, useDebouncedValue } from '../../admin/editorial.js';
-import { EmptyState, ErrorState, LoadingSkeleton, StatusPill } from '../../components/admin/shared.jsx';
+import { AdminListPage, EmptyState, StatusPill } from '../../components/admin/shared.jsx';
 
 function scopeOf(event) {
   const now = Date.now();
@@ -69,17 +69,23 @@ export default function AdminEvents() {
         <span className="admin-muted" aria-live="polite">{rows.length} result(s)</span>
       </div>
 
-      {loading ? <LoadingSkeleton label="Loading events…" /> : null}
-      {!loading && error ? <ErrorState error={error} requestId={requestId} onRetry={retry} context="load events" /> : null}
-      {!loading && !error && rows.length === 0 ? (
-        <EmptyState
-          title={data.length === 0 ? 'No events yet' : 'No events match this filter'}
-          hint="Create a draft event to get started. Publish only when the gate passes."
-          actionLabel="+ New event"
-          actionTo="/admin/events/new"
-        />
-      ) : null}
-      {!loading && !error && rows.length > 0 ? (
+      <AdminListPage
+        loading={loading}
+        loadingLabel="Loading events…"
+        error={error}
+        requestId={requestId}
+        onRetry={retry}
+        errorContext="load events"
+        isEmpty={rows.length === 0}
+        empty={
+          <EmptyState
+            title={data.length === 0 ? 'No events yet' : 'No events match this filter'}
+            hint="Create a draft event to get started. Publish only when the gate passes."
+            actionLabel="+ New event"
+            actionTo="/admin/events/new"
+          />
+        }
+      >
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
@@ -126,7 +132,7 @@ export default function AdminEvents() {
             </tbody>
           </table>
         </div>
-      ) : null}
+      </AdminListPage>
     </section>
   );
 }

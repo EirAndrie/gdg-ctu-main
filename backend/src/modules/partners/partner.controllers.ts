@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { getAuth } from "@clerk/express";
 import {
       getPagination,
       getStringParam,
@@ -16,10 +17,25 @@ import {
 } from "./partner.services";
 import { CreatePartnerSchema, UpdatePartnerSchema } from "./partner.validations";
 
+const getClerkId = (req: Request) => {
+      const { userId } = getAuth(req);
+      if (!userId) {
+            return undefined;
+      }
+      return userId;
+};
+
 export const createPartner = async (req: Request, res: Response) => {
       try {
+            const clerkId = getClerkId(req);
+            if (!clerkId) {
+                  return res.status(401).json({
+                        success: false,
+                        message: "Unable to determine uploader (Clerk ID)",
+                  });
+            }
             const data = validateBody(CreatePartnerSchema, req.body);
-            const partner = await createPartnerService(data);
+            const partner = await createPartnerService(data, clerkId);
             return res.status(201).json({
                   success: true,
                   message: "Partner created successfully",
@@ -63,9 +79,16 @@ export const getPartnerBySlug = async (req: Request, res: Response) => {
 
 export const updatePartner = async (req: Request, res: Response) => {
       try {
+            const clerkId = getClerkId(req);
+            if (!clerkId) {
+                  return res.status(401).json({
+                        success: false,
+                        message: "Unable to determine uploader (Clerk ID)",
+                  });
+            }
             const id = validateUuid(req.params.id);
             const data = validateBody(UpdatePartnerSchema, req.body);
-            const partner = await updatePartnerService(id, data);
+            const partner = await updatePartnerService(id, data, clerkId);
             return res.status(200).json({
                   success: true,
                   message: "Partner updated successfully",

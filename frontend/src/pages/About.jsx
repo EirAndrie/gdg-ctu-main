@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { mapContent, publicApi, sortPartners, usePublicFeed } from '../api/public.js';
+import { hideImage } from '../components/FeedStates.jsx';
 
 const purposeCards = [
   {
@@ -88,10 +89,6 @@ const legacyPartners = [
   { name: 'AWS', role: 'Cloud Partner', image: null },
   { name: 'GitHub', role: 'Developer Partner', image: null },
 ];
-
-function hideImage(e) {
-  e.currentTarget.style.display = 'none';
-}
 
 export default function About() {
   const about = usePublicFeed(

@@ -1,10 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { formatDate, mapAlbum, publicApi, usePublicFeed } from '../api/public.js';
-import { FeedError, FeedSkeleton, friendlyFeedError } from '../components/FeedStates.jsx';
-
-function hideImage(e) {
-  e.currentTarget.style.display = 'none';
-}
+import { FeedError, FeedSkeleton, friendlyFeedError, hideImage } from '../components/FeedStates.jsx';
 
 function AlbumDetail({ slug }) {
   const { data, loading, error, retry } = usePublicFeed(

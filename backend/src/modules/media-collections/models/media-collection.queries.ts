@@ -1,6 +1,7 @@
-import { and, asc, count, eq } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
+import { activeByKey, activeOnly } from "../../../utils/activeScope";
 import { mediaCollections } from "./media-collection";
 
 export type MediaCollectionRecord = typeof mediaCollections.$inferSelect;
@@ -39,7 +40,7 @@ export const getActiveMediaCollections = async () =>
       db
             .select()
             .from(mediaCollections)
-            .where(eq(mediaCollections.isActive, true))
+            .where(activeOnly(mediaCollections.isActive))
             .orderBy(asc(mediaCollections.displayOrder), asc(mediaCollections.name));
 
 export const getActiveMediaCollectionBySlug = async (slug: string) => {
@@ -47,9 +48,10 @@ export const getActiveMediaCollectionBySlug = async (slug: string) => {
             .select()
             .from(mediaCollections)
             .where(
-                  and(
-                        eq(mediaCollections.slug, slug),
-                        eq(mediaCollections.isActive, true),
+                  activeByKey(
+                        mediaCollections.slug,
+                        mediaCollections.isActive,
+                        slug,
                   ),
             );
       return col;

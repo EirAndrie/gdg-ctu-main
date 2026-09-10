@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useClerk, useUser } from '@clerk/clerk-react';
+import { adminNewTargetFor } from '../../admin/editorial.js';
 import '../../styles/admin.css';
 
 export const ADMIN_NAV = [
@@ -13,21 +14,6 @@ export const ADMIN_NAV = [
   { to: '/admin/media', label: 'Media' },
   { to: '/admin/settings', label: 'Settings' },
 ];
-
-const NEW_TARGET = {
-  '/admin/events': '/admin/events/new',
-  '/admin/team': '/admin/team/new',
-  '/admin/partners': '/admin/partners/new',
-  '/admin/gallery': '/admin/gallery/albums/new',
-  '/admin/media': '/admin/media',
-};
-
-function newTargetFor(pathname) {
-  const match = Object.keys(NEW_TARGET)
-    .sort((a, b) => b.length - a.length)
-    .find((base) => pathname === base || pathname.startsWith(`${base}/`));
-  return match ? NEW_TARGET[match] : '/admin/events/new';
-}
 
 function Breadcrumbs() {
   const { pathname } = useLocation();
@@ -147,7 +133,7 @@ export default function AdminShell() {
             />
           </form>
           <Identity />
-          <Link className="gdg-btn gdg-btn-primary admin-new-btn" to={newTargetFor(location.pathname)}>
+          <Link className="gdg-btn gdg-btn-primary admin-new-btn" to={adminNewTargetFor(location.pathname)}>
             + New
           </Link>
         </header>

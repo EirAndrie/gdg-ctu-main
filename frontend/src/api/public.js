@@ -1,18 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from './client.js';
 import { toArray } from './resources.js';
+import { qs, useFeed } from './feed.js';
+
+export { qs };
 
 /**
  * Public (unauthenticated) CMS contract — spec v0.4 §5.
  * Base is VITE_API_URL which already includes /GDGoC-CTU-Main/v0.0.1.
  * All payloads are safe fields only (no Clerk IDs, no emails rendered).
  */
-
-function qs(params = {}) {
-  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
-  if (!entries.length) return '';
-  return `?${new URLSearchParams(entries).toString()}`;
-}
 
 function toObject(payload) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload ?? null;
@@ -160,38 +156,9 @@ export function sortPartners(list) {
     .sort((a, b) => (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9) || a.order - b.order);
 }
 
-/** Shared public-feed state machine: loading skeleton / data / error+retry. */
+/** Shared public-feed state machine — delegates to the generic useFeed (see api/feed.js). */
 export function usePublicFeed(loader, depsKey = '') {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [nonce, setNonce] = useState(0);
-  const retry = useCallback(() => setNonce((n) => n + 1), []);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setError(null);
-    Promise.resolve()
-      .then(loader)
-      .then((result) => {
-        if (alive) {
-          setData(result);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (alive) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [depsKey, nonce]);
-
+  const { data, loading, error, retry } = useFeed(loader, { depsKey, initialData: null });
   return { data, loading, error, retry };
 }
 

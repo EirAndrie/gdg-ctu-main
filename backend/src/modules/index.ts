@@ -41,12 +41,23 @@ protectedRouter.use("/member-terms", memberTermsRoutes);
 protectedRouter.use("/partners", partnerRoutes);
 router.use(protectedRouter);
 
-// Public (no auth) — CMS reads for the website.
-router.use("/health", healthRoutes);
-router.use("/public/team", publicTeamRoutes);
-router.use("/public/events", publicEventsRoutes);
-router.use("/public/content", publicContentRoutes);
-router.use("/public/partners", publicPartnersRoutes);
-router.use("/public/gallery", publicGalleryRoutes);
+// Public (no auth) — CMS reads for the website. A new public entity is one
+// entry in `publicMounts`; paths stay identical.
+const publicMounts = [
+      ["/health", healthRoutes],
+      ["/public/team", publicTeamRoutes],
+      ["/public/events", publicEventsRoutes],
+      ["/public/content", publicContentRoutes],
+      ["/public/partners", publicPartnersRoutes],
+      ["/public/gallery", publicGalleryRoutes],
+] as const;
+
+export function registerPublicRoutes(target: Router) {
+      for (const [path, subRouter] of publicMounts) {
+            target.use(path, subRouter);
+      }
+}
+
+registerPublicRoutes(router);
 
 export default router;

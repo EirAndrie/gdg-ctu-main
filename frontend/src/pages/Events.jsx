@@ -1,12 +1,8 @@
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { formatDate, mapEvent, publicApi, usePublicFeed } from '../api/public.js';
-import { FeedError, FeedSkeleton, friendlyFeedError } from '../components/FeedStates.jsx';
+import { FeedError, FeedSkeleton, friendlyFeedError, hideImage } from '../components/FeedStates.jsx';
 
 const SCOPES = ['upcoming', 'featured', 'past'];
-
-function hideImage(e) {
-  e.currentTarget.style.display = 'none';
-}
 
 function EventCard({ event }) {
   return (

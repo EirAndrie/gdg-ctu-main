@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
+import { useFeed } from '../api/feed.js';
 
 export const RESERVED_SLUGS = ['api', 'admin', 'media', 'sitemap.xml', 'login', 'events', 'team', 'gallery', 'content', 'partners', 'settings', 'officers'];
 export const EVENT_STATUSES = ['draft', 'published', 'archived', 'cancelled'];
@@ -147,42 +148,9 @@ export function useDirtyGuard(dirty) {
   return blocker;
 }
 
-/** Shared list-fetch state machine: loading skeleton / error+retry(requestId) / data. */
+/** Shared list-fetch state machine — delegates to the generic useFeed (see api/feed.js). */
 export function useAdminList(loader, depsKey = '') {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [requestId, setRequestId] = useState(null);
-  const [nonce, setNonce] = useState(0);
-  const retry = useCallback(() => setNonce((n) => n + 1), []);
-
-  useEffect(() => {
-    let alive = true;
-    const rid = `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`;
-    setLoading(true);
-    setError(null);
-    setRequestId(rid);
-    Promise.resolve()
-      .then(loader)
-      .then((rows) => {
-        if (alive) {
-          setData(rows ?? []);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (alive) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [depsKey, nonce]);
-
-  return { data, loading, error, requestId, retry };
+  return useFeed(loader, { depsKey, initialData: [], withRequestId: true });
 }
 
 export function timeAgo(value) {
@@ -205,4 +173,36 @@ export function useDebouncedValue(value, delay = 250) {
     return () => clearTimeout(timer.current);
   }, [value, delay]);
   return debounced;
+}
+
+/**
+ * Canonical admin entity→route map (spec v0.4 §3). Single source of truth for
+ * Dashboard item links/labels and the shell +New target — do not duplicate
+ * entity→route dispatch elsewhere.
+ */
+export const ADMIN_ENTITY_ROUTES = {
+  events: { list: '/admin/events', new: '/admin/events/new', detail: (id) => `/admin/events/${id}` },
+  team: { list: '/admin/team', new: '/admin/team/new', detail: (id) => `/admin/team/${id}` },
+  partners: { list: '/admin/partners', new: '/admin/partners/new', detail: (id) => `/admin/partners/${id}` },
+  gallery: { list: '/admin/gallery', new: '/admin/gallery/albums/new', detail: (id) => `/admin/gallery/albums/${id}` },
+  content: { list: '/admin/content', new: '/admin/content', detail: (key) => `/admin/content/${key}` },
+  media: { list: '/admin/media', new: '/admin/media', detail: null },
+};
+
+export function adminItemLabel(item, fallback = 'Untitled') {
+  return item?.title ?? item?.name ?? item?.section_key ?? item?.sectionKey ?? item?.filename ?? fallback;
+}
+
+export function adminDetailPathFor(kind, item) {
+  const entry = ADMIN_ENTITY_ROUTES[kind];
+  if (!entry?.detail) return '/admin';
+  if (kind === 'content') return entry.detail(item?.section_key ?? item?.sectionKey);
+  return entry.detail(item?.id ?? item?._id ?? item?.uuid ?? item?.slug);
+}
+
+/** Longest-prefix match of the current admin path to its section's "new" target. */
+export function adminNewTargetFor(pathname = '') {
+  const entries = Object.values(ADMIN_ENTITY_ROUTES).sort((a, b) => b.list.length - a.list.length);
+  const match = entries.find((e) => pathname === e.list || pathname.startsWith(`${e.list}/`));
+  return match?.new ?? ADMIN_ENTITY_ROUTES.events.new;
 }

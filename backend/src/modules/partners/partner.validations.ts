@@ -5,7 +5,7 @@ import { PARTNER_TIERS, partners } from "./models/partner";
 export const PartnerSchema = createSelectSchema(partners);
 
 export const CreatePartnerSchema = createInsertSchema(partners)
-      .omit({ id: true, createdAt: true, updatedAt: true })
+      .omit({ id: true, createdAt: true, updatedAt: true, createdBy: true, updatedBy: true })
       .extend({
             name: z.string().trim().min(1, { message: "Name is required." }),
             slug: z.string().trim().min(1, { message: "Slug is required." }),

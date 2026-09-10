@@ -1,4 +1,7 @@
 import { apiFetch, API_BASE_URL } from './client.js';
+import { qs } from './feed.js';
+
+export { qs };
 
 /** Normalize list payloads: backend may return an array or { data/items/rows }. */
 export function toArray(payload) {
@@ -20,12 +23,6 @@ export function getUpdatedAt(item) {
 
 export function getStatus(item) {
   return (item?.status ?? (item?.is_active === false ? 'archived' : 'draft')).toLowerCase();
-}
-
-function qs(params = {}) {
-  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
-  if (!entries.length) return '';
-  return `?${new URLSearchParams(entries).toString()}`;
 }
 
 function resource(base) {

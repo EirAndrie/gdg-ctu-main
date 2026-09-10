@@ -2,28 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { albumsApi, contentApi, eventsApi, getId, getStatus, getUpdatedAt, mediaApi, partnersApi, teamApi } from '../../api/resources.js';
 import { toArray } from '../../api/resources.js';
-import { timeAgo } from '../../admin/editorial.js';
+import { adminDetailPathFor, adminItemLabel, timeAgo } from '../../admin/editorial.js';
 import { ErrorState, LoadingSkeleton, StatusPill } from '../../components/admin/shared.jsx';
-
-function labelFor(item, fallback) {
-  return item?.title ?? item?.name ?? item?.section_key ?? item?.sectionKey ?? item?.filename ?? fallback;
-}
-
-function linkFor(kind, item) {
-  const id = getId(item) ?? item?.slug;
-  if (kind === 'events') return `/admin/events/${id}`;
-  if (kind === 'team') return `/admin/team/${id}`;
-  if (kind === 'partners') return `/admin/partners/${id}`;
-  if (kind === 'gallery') return `/admin/gallery/albums/${id}`;
-  if (kind === 'content') return `/admin/content/${item?.section_key ?? item?.sectionKey}`;
-  return '/admin';
-}
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [requestId, setRequestId] = useState(null);
-  const [nonce, setNonce] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
   const [drafts, setDrafts] = useState([]);
   const [recent, setRecent] = useState([]);
 
@@ -81,7 +67,7 @@ export default function AdminDashboard() {
     return () => {
       alive = false;
     };
-  }, [nonce]);
+  }, [retryCount]);
 
   if (loading) {
     return (
@@ -96,7 +82,7 @@ export default function AdminDashboard() {
     return (
       <section aria-label="Dashboard">
         <h1>Dashboard</h1>
-        <ErrorState error={error} requestId={requestId} onRetry={() => setNonce((n) => n + 1)} context="load the dashboard" />
+        <ErrorState error={error} requestId={requestId} onRetry={() => setRetryCount((n) => n + 1)} context="load the dashboard" />
       </section>
     );
   }
@@ -117,8 +103,8 @@ export default function AdminDashboard() {
           ) : (
             <ul>
               {drafts.map(({ kind, item }, i) => (
-                <li key={`${kind}-${getId(item) ?? labelFor(item, `draft-${i}`)}`}>
-                  <Link to={linkFor(kind, item)}>{labelFor(item, 'Untitled')}</Link>{' '}
+                <li key={`${kind}-${getId(item) ?? adminItemLabel(item, `draft-${i}`)}`}>
+                  <Link to={adminDetailPathFor(kind, item)}>{adminItemLabel(item)}</Link>{' '}
                   <StatusPill status={getStatus(item)} active={item?.is_active} />{' '}
                   <span className="admin-muted">{kind} · {timeAgo(getUpdatedAt(item))}</span>
                 </li>
@@ -133,8 +119,8 @@ export default function AdminDashboard() {
           ) : (
             <ul>
               {recent.map(({ kind, item }, i) => (
-                <li key={`r-${kind}-${getId(item) ?? labelFor(item, `recent-${i}`)}`}>
-                  <Link to={linkFor(kind, item)}>{labelFor(item, 'Untitled')}</Link>{' '}
+                <li key={`r-${kind}-${getId(item) ?? adminItemLabel(item, `recent-${i}`)}`}>
+                  <Link to={adminDetailPathFor(kind, item)}>{adminItemLabel(item)}</Link>{' '}
                   <span className="admin-muted">
                     {kind} · edited {timeAgo(getUpdatedAt(item))}
                     {item?.updated_by ? ` by ${item.updated_by}` : ''}

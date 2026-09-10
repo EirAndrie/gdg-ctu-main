@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { albumsApi, albumItemsApi, getId } from '../../api/resources.js';
 import { useAdminList, useDebouncedValue } from '../../admin/editorial.js';
-import { EmptyState, ErrorState, LoadingSkeleton, StatusPill } from '../../components/admin/shared.jsx';
+import { AdminListPage, EmptyState, StatusPill } from '../../components/admin/shared.jsx';
 
 export default function AdminGallery() {
   const [params] = useSearchParams();
@@ -43,12 +43,18 @@ export default function AdminGallery() {
         </div>
         <Link className="gdg-btn gdg-btn-primary" to="/admin/gallery/albums/new">+ New album</Link>
       </div>
-      {loading ? <LoadingSkeleton label="Loading albums…" /> : null}
-      {!loading && error ? <ErrorState error={error} requestId={albums.requestId} onRetry={albums.retry} context="load albums" /> : null}
-      {!loading && !error && rows.length === 0 ? (
-        <EmptyState title="No albums yet" hint="Manually create an album, then add photos from the Media picker." actionLabel="+ New album" actionTo="/admin/gallery/albums/new" />
-      ) : null}
-      {!loading && !error && rows.length > 0 ? (
+      <AdminListPage
+        loading={loading}
+        loadingLabel="Loading albums…"
+        error={error}
+        requestId={albums.requestId}
+        onRetry={albums.retry}
+        errorContext="load albums"
+        isEmpty={rows.length === 0}
+        empty={
+          <EmptyState title="No albums yet" hint="Manually create an album, then add photos from the Media picker." actionLabel="+ New album" actionTo="/admin/gallery/albums/new" />
+        }
+      >
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead><tr><th scope="col">Title</th><th scope="col">Event link</th><th scope="col">Photos</th><th scope="col">Featured</th><th scope="col">Status</th></tr></thead>
@@ -68,7 +74,7 @@ export default function AdminGallery() {
             </tbody>
           </table>
         </div>
-      ) : null}
+      </AdminListPage>
     </section>
   );
 }

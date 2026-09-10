@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getId, teamApi } from '../../api/resources.js';
 import { useAdminList, useDebouncedValue } from '../../admin/editorial.js';
-import { EmptyState, ErrorState, LoadingSkeleton, StatusPill } from '../../components/admin/shared.jsx';
+import { AdminListPage, EmptyState, StatusPill } from '../../components/admin/shared.jsx';
 
 export default function AdminTeam() {
   const [params] = useSearchParams();
@@ -28,12 +28,18 @@ export default function AdminTeam() {
         </div>
         <Link className="gdg-btn gdg-btn-primary" to="/admin/team/new">+ New member</Link>
       </div>
-      {loading ? <LoadingSkeleton label="Loading team…" /> : null}
-      {!loading && error ? <ErrorState error={error} requestId={requestId} onRetry={retry} context="load team" /> : null}
-      {!loading && !error && rows.length === 0 ? (
-        <EmptyState title="No team members yet" hint="Create the first profile as a draft." actionLabel="+ New member" actionTo="/admin/team/new" />
-      ) : null}
-      {!loading && !error && rows.length > 0 ? (
+      <AdminListPage
+        loading={loading}
+        loadingLabel="Loading team…"
+        error={error}
+        requestId={requestId}
+        onRetry={retry}
+        errorContext="load team"
+        isEmpty={rows.length === 0}
+        empty={
+          <EmptyState title="No team members yet" hint="Create the first profile as a draft." actionLabel="+ New member" actionTo="/admin/team/new" />
+        }
+      >
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
@@ -56,7 +62,7 @@ export default function AdminTeam() {
             </tbody>
           </table>
         </div>
-      ) : null}
+      </AdminListPage>
     </section>
   );
 }

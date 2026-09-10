@@ -25,6 +25,9 @@ export const mediaCollectionItems = pgTable(
 
             caption: varchar("caption", { length: 255 }),
 
+            // Item alt text (required before publish, spec §4.6).
+            altText: varchar("alt_text", { length: 255 }).notNull(),
+
             // Featured-photo strip flag (public gallery featured feed, max 8).
             isFeatured: boolean("is_featured").default(false).notNull(),
 

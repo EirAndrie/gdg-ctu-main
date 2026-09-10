@@ -1,6 +1,7 @@
 import { asc, count, eq } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
+import { activeOnly } from "../../../utils/activeScope";
 import { partners } from "./partner";
 
 export type PartnerRecord = typeof partners.$inferSelect;
@@ -45,7 +46,7 @@ export const getActivePartners = async () => {
       const rows = await db
             .select()
             .from(partners)
-            .where(eq(partners.isActive, true));
+            .where(activeOnly(partners.isActive));
       const rank: Record<string, number> = {
             platinum: 0,
             gold: 1,

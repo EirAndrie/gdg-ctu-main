@@ -2,11 +2,9 @@ import { Link } from 'react-router-dom';
 import {
   formatDate, mapContent, mapEvent, mapMember, mapPhoto, publicApi, sortPartners, usePublicFeed,
 } from '../api/public.js';
-import { FeedError, FeedSkeleton, StripHead, friendlyFeedError } from '../components/FeedStates.jsx';
+import { FeedError, FeedSkeleton, StripHead, friendlyFeedError, hideImage } from '../components/FeedStates.jsx';
 
-const JOIN_FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSe8XGfS83u5u3bbwqaUlHYmYlTNqPuYPl1aULCb8xMrN91jaQ/viewform?pli=1';
-
+// Intentional hardcoded shell per spec v0.4 §1: Home is "mostly hardcoded shell + CMS feeds" — pillars stay in React, CMS controls the feeds.
 const pillars = [
   {
     title: 'Our Mission',
@@ -22,6 +20,7 @@ const pillars = [
   },
 ];
 
+// Intentional hardcoded shell per spec v0.4 §1 (see pillars comment above) — FAQ stays in React.
 const faqs = [
   {
     question: 'What is GDG On Campus CTU?',
@@ -49,10 +48,6 @@ const faqs = [
       'Not at all! We welcome everyone regardless of skill level. Our activities are designed for beginners to advanced learners. We believe in learning together and helping each other grow.',
   },
 ];
-
-function hideImage(e) {
-  e.currentTarget.style.display = 'none';
-}
 
 /* Render null while loading only if the strip also hides when empty:
    skeleton keeps layout stable, so always render the section shell. */
@@ -152,7 +147,7 @@ function PartnersStrip() {
 
 function MomentsStrip() {
   const { data, loading, error, retry } = usePublicFeed(
-    () => publicApi.getFeaturedPhotos().then((rows) => rows.map(mapPhoto).slice(0, 10)),
+    () => publicApi.getFeaturedPhotos().then((rows) => rows.map(mapPhoto).slice(0, 8)),
     'home-moments',
   );
   if (!loading && !error && (!data || data.length === 0)) return null;
@@ -184,6 +179,11 @@ export default function Home() {
     'home-hero',
   );
   const heroContent = !hero.loading && !hero.error ? hero.data : null;
+  const cta = usePublicFeed(
+    () => publicApi.getContentByKey('cta').then((c) => (c ? mapContent(c) : null)),
+    'home-cta',
+  );
+  const ctaContent = !cta.loading && !cta.error ? cta.data : null;
 
   return (
     <div className="gdg-container">
@@ -266,11 +266,21 @@ export default function Home() {
 
       <section className="gdg-section">
         <div className="gdg-cta">
-          <h2>Ready to build with us?</h2>
-          <p>Join GDG On Campus CTU and start learning with the community.</p>
-          <a href={JOIN_FORM_URL} target="_blank" rel="noreferrer">
-            Join Us
-          </a>
+          <h2>{ctaContent?.title || 'Ready to build with us?'}</h2>
+          <p>{ctaContent?.subtitle || ctaContent?.body || 'Join GDG On Campus CTU and start learning with the community.'}</p>
+          {ctaContent?.buttonUrl ? (
+            <a href={ctaContent.buttonUrl}>
+              {ctaContent.buttonText || 'Join Us'}
+            </a>
+          ) : (
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSe8XGfS83u5u3bbwqaUlHYmYlTNqPuYPl1aULCb8xMrN91jaQ/viewform?pli=1"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Join Us
+            </a>
+          )}
         </div>
       </section>
     </div>
