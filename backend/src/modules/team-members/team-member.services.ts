@@ -28,6 +28,12 @@ import {
       deleteMedia as deleteMediaCloudinaryService,
 } from "../../config/cloudinary/cloudinary.services";
 import { createMediaRecord } from "../../config/cloudinary/utils/cloudinary-media-data-helper";
+import logger from "../../utils/logger";
+
+const isCloudinaryDisabledError = (error: any): boolean =>
+      (error instanceof AppError && error.statusCode === 503) ||
+      (typeof error?.message === "string" &&
+            error.message.includes("not configured"));
 // DTO for the multipart "create with image" endpoint.
 interface CreateTeamMemberWithImageDTO {
       memberData: NewTeamMemberRecord;
@@ -74,16 +80,26 @@ export const createTeamMemberService = async (
             await clearCacheByPrefix("team-members:");
             return teamMember;
       } catch (error) {
-            // Database creation failed, delete the uploaded photo immediately
-            await deleteMediaCloudinaryService(
-                  uploadResult.public_id,
-                  (uploadResult.resource_type === "auto"
-                        ? "image"
-                        : uploadResult.resource_type) as
-                        | "image"
-                        | "video"
-                        | "raw",
-            );
+            // Database creation failed, delete the uploaded photo immediately.
+            // Tolerate Cloudinary being disabled (503) and continue.
+            try {
+                  await deleteMediaCloudinaryService(
+                        uploadResult.public_id,
+                        (uploadResult.resource_type === "auto"
+                              ? "image"
+                              : uploadResult.resource_type) as
+                              | "image"
+                              | "video"
+                              | "raw",
+                  );
+            } catch (cleanupError: any) {
+                  if (!isCloudinaryDisabledError(cleanupError)) {
+                        throw cleanupError;
+                  }
+                  logger.warn(
+                        "Cloudinary disabled - skipping Cloudinary rollback delete",
+                  );
+            }
             throw new AppError(
                   400,
                   "An Error has Occured: Failed to create team member with its profile imaage",
@@ -199,11 +215,20 @@ export const updateTeamMemberService = async (
                   // Delete DB record
                   const oldMedia = await getMediaByIdService(oldMediaId);
                   if (oldMedia) {
-                        // First remove from Cloudinary
-                        await deleteMediaCloudinaryService(
-                              oldMedia.publicId,
-                              oldMedia.resourceType as any,
-                        );
+                        // First remove from Cloudinary (tolerate disabled 503)
+                        try {
+                              await deleteMediaCloudinaryService(
+                                    oldMedia.publicId,
+                                    oldMedia.resourceType as any,
+                              );
+                        } catch (cleanupError: any) {
+                              if (!isCloudinaryDisabledError(cleanupError)) {
+                                    throw cleanupError;
+                              }
+                              logger.warn(
+                                    "Cloudinary disabled - skipping Cloudinary delete, removing DB record only",
+                              );
+                        }
                         // Delete meta data
                         await deleteMediaService(oldMedia.id);
                   }
@@ -249,12 +274,22 @@ export const deleteTeamMemberService = async (id: string) => {
 
                   if (mediaRecord) {
                         // Delete the media meta data from the database
+                        // (tolerates Cloudinary disabled via deleteMediaService)
                         await deleteMediaService(teamMember.profileMediaId);
-                        // Delete the physical file from Cloudinary
-                        await deleteMediaCloudinaryService(
-                              mediaRecord.publicId,
-                              mediaRecord.resourceType as any,
-                        );
+                        // Delete the physical file from Cloudinary (tolerate disabled 503)
+                        try {
+                              await deleteMediaCloudinaryService(
+                                    mediaRecord.publicId,
+                                    mediaRecord.resourceType as any,
+                              );
+                        } catch (cleanupError: any) {
+                              if (!isCloudinaryDisabledError(cleanupError)) {
+                                    throw cleanupError;
+                              }
+                              logger.warn(
+                                    "Cloudinary disabled - skipping Cloudinary delete, DB record already removed",
+                              );
+                        }
                   }
             } catch (error) {
                   throw new AppError(

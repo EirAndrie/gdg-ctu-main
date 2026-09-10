@@ -1,11 +1,17 @@
-import cloudinary from "./cloudinary.config";
+import cloudinary, { isCloudinaryEnabled } from "./cloudinary.config";
 import logger from "../../utils/logger";
 import { AppError } from "../../utils/http";
 
 /**
- * The sole purpose of this function is to test connectivity to cloudinary
+ * The sole purpose of this function is to test connectivity to cloudinary.
+ * No-ops when CLOUDINARY_URL is not configured so the server can boot
+ * without Cloudinary.
  */
 export const testCloudinaryConnection = async () => {
+      if (!isCloudinaryEnabled()) {
+            logger.warn("Cloudinary disabled - skipping connection test");
+            return;
+      }
       try {
             await cloudinary.api.ping();
             logger.info("Cloudinary Connected Successfully");

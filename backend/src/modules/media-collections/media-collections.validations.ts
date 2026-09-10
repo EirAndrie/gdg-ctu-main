@@ -21,7 +21,12 @@ export const CreateMediaCollectionSchema = createInsertSchema(mediaCollections)
                   .refine((val) => !val || val.length > 0, {
                         message: "Cover media ID must be a valid UUID if provided.",
                   }),
-            createdBy: z.uuid({ message: "CreatedBy must be a valid UUID." }),
+            createdBy: z
+                  .string({ error: "CreatedBy is required" })
+                  .trim()
+                  .min(1, {
+                        message: "CreatedBy must be a non‑empty string (Clerk ID).",
+                  }),
       });
 
 export const UpdateMediaCollectionSchema =
