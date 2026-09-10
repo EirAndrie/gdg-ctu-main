@@ -28,7 +28,7 @@ export default function App() {
         <Route path="/contact" element={<Contact />} />
 
         {/* Admin routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/login/*" element={<AdminLogin />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/events" element={<AdminEvents />} />
