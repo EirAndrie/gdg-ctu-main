@@ -5,6 +5,7 @@ import {
       getMemberTerms,
       countMemberTerms,
       getMemberTermById,
+      getTeamMembersByTermId,
       updateMemberTerm,
       deleteMemberTerm,
 } from "./models/member-terms.queries";
@@ -65,6 +66,33 @@ export const getMemberTermsService = async (pagination: Pagination) => {
             memberTerms,
             pagination: getPaginationMeta(pagination, total),
       };
+      await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
+      return res;
+};
+
+export const getTeamMembersByTerm = async (
+      termIdentifier: string,
+      pagination: Pagination,
+) => {
+      const cacheKey = `member-terms:term:${termIdentifier}:page:${pagination.page}:limit:${pagination.limit}`;
+      const cached = await getCache<any>(cacheKey);
+      if (cached) return cached;
+
+      // Ensure term exists
+      const term = await getTermById(termIdentifier);
+      if (!term) {
+            throw new AppError(404, "Term not found");
+      }
+
+      const members = await getTeamMembersByTermId(termIdentifier, pagination);
+
+      // Optional: total count for pagination – using overall count for now
+      const total = await countMemberTerms();
+      const res = {
+            members,
+            pagination: getPaginationMeta(pagination, total),
+      };
+
       await setCache(cacheKey, res, DEFAULT_CACHE_TIME_TO_LIVE);
       return res;
 };

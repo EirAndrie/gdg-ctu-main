@@ -47,9 +47,9 @@ export async function uploadMedia(
 }
 
 // Cloudinary Delete Media Function Service
-export async function deleteMedia(
+export async function deleteMediaCloudinaryService(
       publicId: string,
-      resourceType: "image" | "video" | "raw" = "image",
+      resourceType: any,
 ) {
       return cloudinary.uploader.destroy(publicId, {
             resource_type: resourceType,

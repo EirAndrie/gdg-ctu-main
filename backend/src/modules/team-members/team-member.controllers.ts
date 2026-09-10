@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { getAuth } from "@clerk/express";
+import { getClerkIdFromRequest } from "../auth/auth.utils";
 import {
+      AppError,
       getPagination,
       getStringParam,
       handleControllerError as handleError,
@@ -15,10 +16,7 @@ import {
       getTeamMembersService,
       updateTeamMemberService,
 } from "./team-member.services";
-import {
-      CreateTeamMemberSchema,
-      UpdateTeamMemberSchema,
-} from "./team-member.validations";
+import { UpdateTeamMemberSchema } from "./team-member.validations";
 import { NewTeamMemberRecord } from "./models/team-member.queries";
 
 export const createTeamMemberWithImage = async (
@@ -36,21 +34,24 @@ export const createTeamMemberWithImage = async (
 
             const memberJson = req.body.member;
             if (!memberJson) {
-                  return res.status(400).json({
-                        success: false,
-                        message: "`member` JSON payload missing",
-                  });
+                  throw new AppError(400, "`member` JSON payload missing");
             }
-
             const memberData: NewTeamMemberRecord = JSON.parse(memberJson);
 
-            const auth = getAuth(req);
-            const clerkId =
-                  auth.userId ??
-                  (req.body.uploadedBy
-                        ? getStringParam(req.body.uploadedBy, "uploadedBy")
-                        : undefined);
+            if (!req.body.termId) {
+                  throw new AppError(400, "termId missing");
+            }
+            const termId = String(req.body.termId);
 
+            if (!req.body.role) {
+                  throw new AppError(
+                        400,
+                        "Cannot Proceed: Member Role is missing",
+                  );
+            }
+            const role = String(req.body.role);
+
+            const clerkId = getClerkIdFromRequest(req);
             if (!clerkId) {
                   return res.status(401).json({
                         success: false,
@@ -58,11 +59,17 @@ export const createTeamMemberWithImage = async (
                   });
             }
 
-            const teamMember = await createTeamMemberService({
-                  memberData,
-                  file: file.buffer,
-                  uploadedBy: clerkId,
-            });
+            const teamMember = await createTeamMemberService(
+                  {
+                        memberData,
+                        file: file.buffer,
+                        uploadedBy: clerkId,
+                  },
+                  {
+                        termId,
+                        role,
+                  },
+            );
 
             return res.status(201).json({
                   success: true,
@@ -116,15 +123,8 @@ export const updateTeamMember = async (req: Request, res: Response) => {
             const id = validateUuid(req.params.id);
             const file = (req as any).file?.buffer;
 
-            // ----------------------------------------------------------------
-            // 1️⃣ Extract the JSON payload describing the fields to update.
-            //    The client can send it either as a multipart field named `member`
-            //    (raw JSON string) **or** as plain form‑fields directly (e.g.
-            //    `firstName`, `lastName`, …). We support both for flexibility.
-            // ----------------------------------------------------------------
             let payload: any;
             if (req.body.member) {
-                  // `member` is a JSON string – parse it safely.
                   try {
                         payload = JSON.parse(req.body.member);
                   } catch (e) {
@@ -152,21 +152,11 @@ export const updateTeamMember = async (req: Request, res: Response) => {
 
             const data = validateBody(UpdateTeamMemberSchema, payload);
 
-            const auth = getAuth(req);
-            let clerkId;
-
-            if (auth.userId !== null && auth.userId !== undefined) {
-                  clerkId = auth.userId;
-            } else if (req.body.uploadedBy) {
-                  clerkId = getStringParam(req.body.uploadedBy, "uploadedBy");
-            } else {
-                  clerkId = undefined;
-            }
-
-            if (file && !clerkId) {
+            const clerkId = getClerkIdFromRequest(req);
+            if (!clerkId) {
                   return res.status(401).json({
                         success: false,
-                        message: "Unable to determine uploader (Clerk ID) for image upload",
+                        message: "Unable to determine uploader (Clerk ID)",
                   });
             }
 

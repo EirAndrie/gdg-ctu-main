@@ -3,6 +3,7 @@ import {
       createMemberTerm,
       listMemberTerms,
       getMemberTerm,
+      listMembersForTerm,
       updateMemberTerm,
       deleteMemberTerm,
 } from "./member-terms.controllers";
@@ -13,6 +14,11 @@ const router = Router();
 
 router.post("/", createMemberTerm);
 router.get("/", validateQuery("page", "limit"), listMemberTerms);
+router.get(
+      "/by-term",
+      validateQuery("termId", "page", "limit"),
+      listMembersForTerm,
+);
 router.get("/:id", validateParams("id"), getMemberTerm);
 router.patch("/:id", validateParams("id"), updateMemberTerm);
 router.delete("/:id", validateParams("id"), deleteMemberTerm);

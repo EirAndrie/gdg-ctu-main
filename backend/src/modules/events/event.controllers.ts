@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import { getClerkIdFromRequest } from "../auth/auth.utils";
 import {
+      AppError,
       getPagination,
       getStringParam,
       handleControllerError,
@@ -14,12 +16,46 @@ import {
       getEventsService,
       updateEventService,
 } from "./event.services";
-import { CreateEventSchema, UpdateEventSchema } from "./event.validations";
+import { NewEventRecord } from "./models/event.queries";
+import {
+      CreateEventDTO,
+      CreateEventSchema,
+      UpdateEventSchema,
+} from "./event.validations";
 
 export const createEvent = async (req: Request, res: Response) => {
       try {
-            const data = validateBody(CreateEventSchema, req.body);
-            const event = await createEventService(data);
+            const file = (req as any).file;
+            if (!file) {
+                  return res.status(400).json({
+                        success: false,
+                        message: "Event cover image is required",
+                  });
+            }
+
+            const clerkId = getClerkIdFromRequest(req);
+            if (file && !clerkId) {
+                  return res.status(401).json({
+                        success: false,
+                        message: "Unable to determine uploader (Clerk ID) for image upload",
+                  });
+            }
+
+            const eventJson = req.body.event;
+            if (!eventJson) {
+                  throw new AppError(400, "'event' JSON payload missing");
+            }
+
+            const rawEventData = JSON.parse(eventJson);
+            rawEventData.createdBy = clerkId;
+
+            const eventData = CreateEventSchema.parse(rawEventData);
+
+            const event = await createEventService({
+                  eventData,
+                  file: file.buffer,
+                  uploadedBy: clerkId,
+            });
 
             return res.status(201).json({
                   success: true,
@@ -78,13 +114,27 @@ export const getEventBySlug = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
       try {
             const id = validateUuid(req.params.id);
+            const file = (req as any).file; // No file validation since media is optional upon update
+            const clerkId = getClerkIdFromRequest(req);
+            if (file && !clerkId) {
+                  return res.status(401).json({
+                        success: false,
+                        message: "Unable to determine uploader (Clerk ID) for image upload",
+                  });
+            }
+
             const data = validateBody(UpdateEventSchema, req.body);
-            const event = await updateEventService(id, data);
+            const updatedEvent = await updateEventService({
+                  id,
+                  event: data,
+                  file,
+                  uploadedBy: clerkId,
+            });
 
             return res.status(200).json({
                   success: true,
                   message: "Event updated successfully",
-                  event,
+                  event: updatedEvent,
             });
       } catch (error) {
             return handleControllerError(res, error, "Failed to update event");

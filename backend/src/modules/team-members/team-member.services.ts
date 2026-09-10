@@ -28,11 +28,17 @@ import {
       deleteMediaCloudinaryService,
 } from "../../config/cloudinary/cloudinary.services";
 import { createMediaRecord } from "../../config/cloudinary/utils/cloudinary-media-data-helper";
+import { createMemberTermService } from "../member_terms/member-terms.services";
 // DTO for the multipart "create with image" endpoint.
 interface CreateTeamMemberWithImageDTO {
       memberData: NewTeamMemberRecord;
       file: Buffer;
       uploadedBy: string;
+}
+// DTO for fetching term data from controller
+interface FetchMemberTermDetailsDTO {
+      termId: string;
+      role: string;
 }
 // DTO for multipart updating member data with image
 interface UpdateTeamMemberDataWithImageDTO {
@@ -51,6 +57,7 @@ export const toTeamMemberResponse = (teamMember: TeamMember | null) =>
 
 export const createTeamMemberService = async (
       data: CreateTeamMemberWithImageDTO,
+      termData: FetchMemberTermDetailsDTO,
 ) => {
       if (await getTeamMemberBySlug(data.memberData.slug)) {
             throw new AppError(409, "Team member slug already exists");
@@ -70,6 +77,11 @@ export const createTeamMemberService = async (
                   data.memberData,
                   userProfileImage.id,
             );
+
+            await createMemberTermService({
+                  ...termData,
+                  memberId: teamMember.id,
+            });
 
             await clearCacheByPrefix("team-members:");
             return teamMember;

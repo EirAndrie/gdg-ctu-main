@@ -12,7 +12,6 @@ import {
       getTermsService,
       updateTermService,
 } from "./terms.services";
-// import { CreateTermSchema, UpdateTermSchema } from "./terms.validations";
 import { CreateTermSchema, UpdateTermSchema } from "./terms.validations";
 
 export const createTerm = async (req: Request, res: Response) => {

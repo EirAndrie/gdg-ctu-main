@@ -1,15 +1,9 @@
 CREATE TABLE "admins" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"clerk_id" varchar(255) NOT NULL,
+	"id" varchar(255) PRIMARY KEY NOT NULL,
 	"email" varchar(255) NOT NULL,
-	"password_hash" varchar(255) NOT NULL,
-	"first_name" varchar(100) NOT NULL,
-	"last_name" varchar(100) NOT NULL,
-	"profile_img_url" text,
 	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "admins_clerk_id_unique" UNIQUE("clerk_id"),
 	CONSTRAINT "admins_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -69,7 +63,7 @@ CREATE TABLE "events" (
 	"end_at" timestamp NOT NULL,
 	"status" varchar(50) DEFAULT 'draft' NOT NULL,
 	"published_at" timestamp,
-	"created_by" uuid NOT NULL,
+	"created_by" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "events_slug_unique" UNIQUE("slug")
@@ -90,7 +84,7 @@ CREATE TABLE "media_collections" (
 	"slug" varchar(255) NOT NULL,
 	"description" text,
 	"cover_media_id" uuid,
-	"created_by" uuid NOT NULL,
+	"created_by" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "media_collections_slug_unique" UNIQUE("slug")
@@ -108,7 +102,7 @@ CREATE TABLE "media" (
 	"bytes" integer,
 	"original_filename" varchar(255),
 	"alt_text" varchar(255),
-	"uploaded_by" uuid NOT NULL,
+	"uploaded_by" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "media_cloudinary_asset_id_unique" UNIQUE("cloudinary_asset_id"),
@@ -138,7 +132,7 @@ CREATE TABLE "site_content" (
 	"button_url" varchar(2048),
 	"is_active" boolean DEFAULT true NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"updated_by" uuid NOT NULL,
+	"updated_by" varchar NOT NULL,
 	CONSTRAINT "site_content_section_key_unique" UNIQUE("section_key")
 );
 --> statement-breakpoint

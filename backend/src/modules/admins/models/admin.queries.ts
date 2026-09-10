@@ -3,7 +3,6 @@ import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
 import { events } from "../../events/models/event";
 import { media } from "../../media/models/media";
-import { siteContent } from "../../site-content/models/site-content";
 import { admins } from "./admin";
 
 export type AdminRecord = typeof admins.$inferSelect;
@@ -99,11 +98,5 @@ export const adminHasReferences = async (id: string) => {
             .where(eq(media.uploadedBy, id))
             .limit(1);
 
-      const [content] = await db
-            .select({ id: siteContent.id })
-            .from(siteContent)
-            .where(eq(siteContent.updatedBy, id))
-            .limit(1);
-
-      return Boolean(event || uploadedMedia || content);
+      return Boolean(event || uploadedMedia);
 };
