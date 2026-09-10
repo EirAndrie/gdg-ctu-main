@@ -1,5 +1,4 @@
-import express, { Express } from "express";
-import path from "path";
+import { Express } from "express";
 import cors from "cors";
 import logger from "./logger";
 
@@ -86,29 +85,10 @@ export function configureCors(
       );
 }
 
-// Configure environment routes based on production mode
-export function configureEnvironmentRoutes(
-      app: Express,
-      isProduction: boolean,
-) {
-      if (isProduction) {
-            const frontendPath = path.join(__dirname, "../../frontend");
-            app.use(express.static(frontendPath));
-
-            app.get(/.*/, (req, res) => {
-                  if (!req.url.startsWith("/api")) {
-                        res.sendFile(path.join(frontendPath, "index.html"));
-                  } else {
-                        res.status(404).json({
-                              message: "API endpoint not found",
-                        });
-                  }
-            });
-            return;
-      }
-
-      logger.info("App running in Development mode");
-      app.get("/", (_req, res) => {
-            res.send("API running successfully...");
+// Configure fallback routes — API-only, frontend hosted separately
+export function configureEnvironmentRoutes(app: Express) {
+      // Catch-all: return 404 for unmatched routes
+      app.use((_req, res) => {
+            res.status(404).json({ message: "API endpoint not found" });
       });
 }

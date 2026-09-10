@@ -1,0 +1,392 @@
+/* Shared styles for the GDGoC-CTU site, inspired by the legacy static site.
+   Google GDG palette, basic layout only — no animations. */
+
+:root {
+  --gdg-blue: #4285f4;
+  --gdg-red: #ea4335;
+  --gdg-yellow: #fbbc05;
+  --gdg-green: #34a853;
+  --text: #202124;
+  --muted: #5f6368;
+  --bg: #f8f9fc;
+  --card: #ffffff;
+  --border: #e8eaed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+a {
+  color: var(--gdg-blue);
+}
+
+/* ---------- layout ---------- */
+
+.gdg-container {
+  width: 1120px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+}
+
+.gdg-section {
+  padding: 1rem 0 2.5rem;
+}
+
+.gdg-badge {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: var(--gdg-blue);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gdg-gradient-text {
+  background: linear-gradient(90deg, var(--gdg-blue), var(--gdg-red), var(--gdg-yellow), var(--gdg-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gdg-subtitle {
+  color: var(--muted);
+  max-width: 640px;
+}
+
+/* ---------- buttons ---------- */
+
+.gdg-btn {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.gdg-btn-primary {
+  background: var(--gdg-blue);
+  color: #fff;
+}
+
+.gdg-btn-secondary {
+  background: #fff;
+  color: var(--gdg-blue);
+  border: 1px solid var(--gdg-blue);
+}
+
+.gdg-btn-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+/* ---------- navbar / footer ---------- */
+
+.gdg-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
+.gdg-nav-logo img {
+  height: 40px;
+  display: block;
+}
+
+.gdg-nav-links {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0 0 0 auto;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.gdg-nav-links a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.gdg-nav-links a:hover {
+  color: var(--gdg-blue);
+}
+
+.gdg-nav-join {
+  background: var(--gdg-blue);
+  color: #fff !important;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+}
+
+.gdg-footer {
+  background: #fff;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+}
+
+.gdg-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 1.5rem;
+  padding: 2.5rem 1.25rem 1rem;
+  width: 1120px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.gdg-footer-brand img {
+  height: 48px;
+}
+
+.gdg-footer h4 {
+  margin: 0 0 0.5rem;
+}
+
+.gdg-footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gdg-footer li {
+  margin: 0.35rem 0;
+}
+
+.gdg-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.gdg-footer a:hover {
+  color: var(--gdg-blue);
+}
+
+.gdg-footer-bottom {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- hero ---------- */
+
+.gdg-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+  align-items: center;
+  padding: 2.5rem 0;
+}
+
+.gdg-hero h1 {
+  font-size: 2.5rem;
+  line-height: 1.15;
+  margin: 0.75rem 0;
+}
+
+.gdg-hero h1 span {
+  color: var(--gdg-blue);
+}
+
+.gdg-hero p {
+  color: var(--muted);
+}
+
+.gdg-hero img {
+  width: 100%;
+  max-width: 360px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ---------- cards & grids ---------- */
+
+.gdg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.gdg-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.gdg-card h3 {
+  margin: 0 0 0.5rem;
+}
+
+.gdg-card p {
+  color: var(--muted);
+  margin: 0.4rem 0;
+}
+
+.gdg-card ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.gdg-card-meta {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+.gdg-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: var(--gdg-blue);
+}
+
+.gdg-tag-green {
+  background: #e6f4ea;
+  color: var(--gdg-green);
+}
+
+.gdg-tag-yellow {
+  background: #fef7e0;
+  color: #b06000;
+}
+
+/* ---------- media cards (officers / gallery / events) ---------- */
+
+.gdg-photo {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--gdg-blue), #5f5cff);
+}
+
+.gdg-photo-fallback {
+  width: 100%;
+  height: 220px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--gdg-blue), #5f5cff);
+}
+
+.gdg-role {
+  color: var(--gdg-blue);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.gdg-motto {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0;
+  letter-spacing: 0.05em;
+}
+
+.gdg-motto span {
+  color: var(--gdg-blue);
+  margin: 0 0.5rem;
+}
+
+/* ---------- timeline ---------- */
+
+.gdg-timeline {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0 0 0 1.25rem;
+  border-left: 3px solid var(--gdg-blue);
+  display: grid;
+  gap: 1.25rem;
+}
+
+.gdg-timeline-year {
+  font-weight: 700;
+  color: var(--gdg-blue);
+}
+
+/* ---------- faq ---------- */
+
+.gdg-faq {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.gdg-faq details {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+}
+
+.gdg-faq summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---------- CTA banner ---------- */
+
+.gdg-cta {
+  background: var(--gdg-blue);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin-top: 2.5rem;
+}
+
+.gdg-cta p {
+  opacity: 0.9;
+}
+
+.gdg-cta a {
+  display: inline-block;
+  background: #fff;
+  color: var(--gdg-blue);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0.7rem 1.6rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 800px) {
+  .gdg-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .gdg-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
