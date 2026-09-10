@@ -1,4 +1,4 @@
-import { asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
 import { siteContent } from "./site-content";
@@ -40,6 +40,29 @@ export const getSiteContentBySectionKey = async (sectionKey: string) => {
             .select()
             .from(siteContent)
             .where(eq(siteContent.sectionKey, sectionKey));
+      return content;
+};
+
+/** Public feed: active sections only. */
+export const getActiveSiteContentList = async () =>
+      db
+            .select()
+            .from(siteContent)
+            .where(eq(siteContent.isActive, true))
+            .orderBy(asc(siteContent.sectionKey));
+
+export const getActiveSiteContentBySectionKey = async (
+      sectionKey: string,
+) => {
+      const [content] = await db
+            .select()
+            .from(siteContent)
+            .where(
+                  and(
+                        eq(siteContent.sectionKey, sectionKey),
+                        eq(siteContent.isActive, true),
+                  ),
+            );
       return content;
 };
 

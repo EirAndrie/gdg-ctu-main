@@ -21,7 +21,17 @@ export const CreateMediaCollectionSchema = createInsertSchema(mediaCollections)
                   .refine((val) => !val || val.length > 0, {
                         message: "Cover media ID must be a valid UUID if provided.",
                   }),
-            createdBy: z.uuid({ message: "CreatedBy must be a valid UUID." }),
+            createdBy: z
+                  .string()
+                  .trim()
+                  .min(1, {
+                        message: "CreatedBy must be a non‑empty string (Clerk ID).",
+                  }),
+            eventId: z.uuid().nullable().optional(),
+            date: z.coerce.date().nullable().optional(),
+            isFeatured: z.boolean().optional(),
+            isActive: z.boolean().optional(),
+            displayOrder: z.number().int().nonnegative().optional(),
       });
 
 export const UpdateMediaCollectionSchema =

@@ -23,7 +23,10 @@ export default function Navbar() {
           <Link to="/about">About</Link>
         </li>
         <li>
-          <Link to="/officers">Officers</Link>
+          <Link to="/team">Our Team</Link>
+        </li>
+        <li>
+          <Link to="/partners">Partners</Link>
         </li>
         <li>
           <Link to="/gallery">Gallery</Link>

@@ -1,0 +1,174 @@
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useClerk, useUser } from '@clerk/clerk-react';
+import '../../styles/admin.css';
+
+export const ADMIN_NAV = [
+  { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin/events', label: 'Events' },
+  { to: '/admin/team', label: 'Team' },
+  { to: '/admin/partners', label: 'Partners' },
+  { to: '/admin/gallery', label: 'Gallery' },
+  { to: '/admin/content', label: 'Content' },
+  { to: '/admin/media', label: 'Media' },
+  { to: '/admin/settings', label: 'Settings' },
+];
+
+const NEW_TARGET = {
+  '/admin/events': '/admin/events/new',
+  '/admin/team': '/admin/team/new',
+  '/admin/partners': '/admin/partners/new',
+  '/admin/gallery': '/admin/gallery/albums/new',
+  '/admin/media': '/admin/media',
+};
+
+function newTargetFor(pathname) {
+  const match = Object.keys(NEW_TARGET)
+    .sort((a, b) => b.length - a.length)
+    .find((base) => pathname === base || pathname.startsWith(`${base}/`));
+  return match ? NEW_TARGET[match] : '/admin/events/new';
+}
+
+function Breadcrumbs() {
+  const { pathname } = useLocation();
+  const segments = pathname.split('/').filter(Boolean);
+  // Show at depth >= 2 relative to /admin (e.g. /admin/events/abc -> Events / abc)
+  if (segments.length < 2 || segments[0] !== 'admin') return null;
+  const crumbs = segments.slice(1).map((seg, i) => {
+    const href = `/admin/${segments.slice(1, i + 2).join('/')}`;
+    const label = seg === 'albums' ? 'Gallery' : decodeURIComponent(seg).replace(/-/g, ' ');
+    return { href, label, last: i === segments.slice(1).length - 1 };
+  });
+  return (
+    <nav aria-label="Breadcrumb" className="admin-crumbs">
+      <Link to="/admin">Admin</Link>
+      {crumbs.map((c) => (
+        <span key={c.href}>
+          <span aria-hidden="true"> / </span>
+          {c.last ? (
+            <span aria-current="page">{c.label}</span>
+          ) : (
+            <Link to={c.href}>{c.label}</Link>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+function Identity() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const navigate = useNavigate();
+  const name = user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? 'Admin';
+  const initial = String(name).trim().charAt(0).toUpperCase() || 'A';
+  return (
+    <div className="admin-identity">
+      <span className="admin-avatar" aria-hidden="true">{initial}</span>
+      <span className="admin-identity-name" title={name}>{name}</span>
+      <button
+        type="button"
+        className="admin-link-btn"
+        onClick={() => signOut(() => navigate('/admin/login'))}
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
+export default function AdminShell() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const query = params.get('q') ?? '';
+
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  const nav = (
+    <nav aria-label="Admin primary" className="admin-nav">
+      <ul>
+        {ADMIN_NAV.map((item) => (
+          <li key={item.to}>
+            <NavLink
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => (isActive ? 'admin-nav-link is-active' : 'admin-nav-link')}
+            >
+              {item.label}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+
+  return (
+    <div className="admin-shell">
+      <aside className="admin-sidebar" aria-label="Admin sidebar">
+        <Link to="/admin" className="admin-brand">
+          <span className="admin-brand-mark" aria-hidden="true">G</span>
+          <span>GDG-CTU Admin</span>
+        </Link>
+        {nav}
+        <p className="admin-sidebar-note">CMS writes content. Public site reads it.</p>
+      </aside>
+
+      <div className="admin-main-col">
+        <header className="admin-topbar">
+          <button
+            type="button"
+            className="admin-menu-btn"
+            aria-label={drawerOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen((v) => !v)}
+          >
+            ☰
+          </button>
+          <form
+            className="admin-search"
+            role="search"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <label className="admin-visually-hidden" htmlFor="admin-search">Search this section</label>
+            <input
+              id="admin-search"
+              type="search"
+              placeholder="Search this section…"
+              value={query}
+              onChange={(e) => {
+                const next = new URLSearchParams(params);
+                if (e.target.value) next.set('q', e.target.value);
+                else next.delete('q');
+                setParams(next, { replace: true });
+              }}
+            />
+          </form>
+          <Identity />
+          <Link className="gdg-btn gdg-btn-primary admin-new-btn" to={newTargetFor(location.pathname)}>
+            + New
+          </Link>
+        </header>
+
+        <main className="admin-main">
+          <Breadcrumbs />
+          <Outlet />
+        </main>
+      </div>
+
+      {drawerOpen ? (
+        <div className="admin-drawer-backdrop" onClick={() => setDrawerOpen(false)} role="presentation">
+          <div className="admin-drawer" role="dialog" aria-modal="true" aria-label="Admin navigation" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-drawer-head">
+              <strong>GDG-CTU Admin</strong>
+              <button type="button" aria-label="Close navigation" onClick={() => setDrawerOpen(false)}>✕</button>
+            </div>
+            {nav}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

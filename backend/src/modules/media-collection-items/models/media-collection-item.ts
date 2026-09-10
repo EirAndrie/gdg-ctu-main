@@ -1,4 +1,5 @@
 import {
+      boolean,
       integer,
       timestamp,
       uuid,
@@ -23,6 +24,9 @@ export const mediaCollectionItems = pgTable(
             displayOrder: integer("display_order").default(0).notNull(),
 
             caption: varchar("caption", { length: 255 }),
+
+            // Featured-photo strip flag (public gallery featured feed, max 8).
+            isFeatured: boolean("is_featured").default(false).notNull(),
 
             addedAt: timestamp("added_at").defaultNow().notNull(),
       },

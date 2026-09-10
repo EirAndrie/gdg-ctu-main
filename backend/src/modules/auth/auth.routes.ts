@@ -24,6 +24,6 @@ const router = express.Router();
  * @access Protected — requires a valid Clerk session
  */
 router.get("/me", getCurrentAdminUser);
-router.post("/auth/sync", syncCurrentAdminUser);
+router.post("/sync", syncCurrentAdminUser);
 
 export default router;

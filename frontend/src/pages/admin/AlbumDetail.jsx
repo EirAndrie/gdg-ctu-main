@@ -1,0 +1,321 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { albumItemsApi, albumsApi, getId, mediaApi } from '../../api/resources.js';
+import { MAX_FEATURED_PHOTOS, checkSlugUnique, slugify, useDirtyGuard, validateAlbum } from '../../admin/editorial.js';
+import { ErrorState, Field, FormSummary, LoadingSkeleton, focusSummary, inputProps, Toggle, TypedConfirm } from '../../components/admin/shared.jsx';
+
+const EMPTY = { title: '', slug: '', coverMediaId: '', coverAlt: '', eventId: '', date: '', description: '', is_featured: false, is_active: true, status: 'draft' };
+
+function toForm(item = {}) {
+  return {
+    title: item.title ?? '', slug: item.slug ?? '',
+    coverMediaId: item.coverMediaId ?? item.cover_media_id ?? '',
+    coverAlt: item.coverAlt ?? item.cover_alt ?? '',
+    eventId: item.eventId ?? item.event_id ?? '',
+    date: (item.date ?? '').toString().slice(0, 10),
+    description: item.description ?? '',
+    is_featured: !!item.is_featured, is_active: item.is_active ?? true,
+    status: String(item.status ?? 'draft').toLowerCase(),
+  };
+}
+
+export default function AlbumDetail() {
+  const { id } = useParams();
+  const isNew = id === 'new';
+  const navigate = useNavigate();
+  const summaryRef = useRef(null);
+  const [tab, setTab] = useState('content');
+  const [form, setForm] = useState(EMPTY);
+  const [original, setOriginal] = useState(EMPTY);
+  const [photos, setPhotos] = useState([]);
+  const [media, setMedia] = useState([]);
+  const [pickerId, setPickerId] = useState('');
+  const [loading, setLoading] = useState(!isNew);
+  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [slugDup, setSlugDup] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(original), [form, original]);
+  const blocker = useDirtyGuard(dirty && !saving);
+  const albumId = isNew ? null : id;
+  const featuredCount = photos.filter((p) => p.is_featured).length;
+
+  useEffect(() => {
+    let alive = true;
+    mediaApi.list({ limit: 100 }).then((rows) => {
+      if (alive) setMedia(Array.isArray(rows) ? rows : []);
+    }).catch(() => {});
+    if (isNew) return () => { alive = false; };
+    Promise.all([
+      albumsApi.get(id),
+      albumItemsApi.list().catch(() => []),
+    ]).then(([album, allItems]) => {
+      if (!alive) return;
+      const next = toForm(album);
+      setForm(next); setOriginal(next);
+      const mine = (Array.isArray(allItems) ? allItems : []).filter((it) => {
+        const key = it.collection_id ?? it.collectionId ?? it.album_id ?? it.albumId;
+        return String(key) === String(getId(album) ?? id);
+      }).sort((a, b) => (a.order ?? a.display_order ?? 0) - (b.order ?? b.display_order ?? 0));
+      setPhotos(mine);
+      setLoading(false);
+    }).catch((err) => {
+      if (!alive) return;
+      setError(err); setLoading(false);
+    });
+    return () => { alive = false; };
+  }, [id, isNew]);
+
+  const set = (key, value) => {
+    setForm((f) => {
+      const next = { ...f, [key]: value };
+      if (key === 'title' && !slugTouched) next.slug = slugify(value);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!form.slug) { setSlugDup(false); return; }
+    let alive = true;
+    const t = setTimeout(() => {
+      checkSlugUnique(albumsApi, form.slug, isNew ? null : getId(original) ?? id)
+        .then((unique) => { if (alive) setSlugDup(!unique); }).catch(() => {});
+    }, 400);
+    return () => { alive = false; clearTimeout(t); };
+  }, [form.slug, id, isNew, original]);
+
+  if (!isNew && loading) return <section aria-label="Album editor"><h1>Album</h1><LoadingSkeleton label="Loading album…" /></section>;
+  if (!isNew && error) return <section aria-label="Album editor"><h1>Album</h1><ErrorState error={error} onRetry={() => window.location.reload()} context="load this album" /></section>;
+
+  const persist = async (publish = false) => {
+    const next = publish ? { ...form, status: 'published', is_active: true } : form;
+    const gate = publish ? { ...validateAlbum(next), ...(slugDup ? { slug: 'Slug is already in use.' } : {}) } : {};
+    setErrors(gate);
+    if (Object.keys(gate).length) { focusSummary(summaryRef); setTab('content'); return; }
+    setSaving(true); setServerError(null);
+    try {
+      const payload = { ...next, eventId: next.eventId || null };
+      let saved;
+      if (isNew) saved = await albumsApi.create({ ...payload, status: publish ? 'published' : 'draft' });
+      else saved = await albumsApi.update(id, payload);
+      const fresh = toForm(saved ?? next);
+      setForm(fresh); setOriginal(fresh); setToast(publish ? 'Published.' : 'Saved as draft.');
+      if (isNew && (getId(saved) ?? saved?.slug)) navigate(`/admin/gallery/albums/${getId(saved) ?? saved.slug}`, { replace: true });
+    } catch (err) {
+      setServerError(err?.body?.message ?? err?.message ?? 'Save failed.');
+    } finally { setSaving(false); }
+  };
+
+  const addPhoto = async () => {
+    if (!pickerId || !albumId) return;
+    if (photos.some((p) => String(p.media_id ?? p.mediaId) === String(pickerId))) {
+      setServerError('That photo is already in this album.');
+      return;
+    }
+    setSaving(true); setServerError(null);
+    try {
+      const created = await albumItemsApi.create({
+        collection_id: albumId, media_id: pickerId,
+        order: photos.length, is_featured: false,
+      });
+      setPhotos((list) => [...list, created ?? { id: `tmp-${Date.now()}`, media_id: pickerId, order: list.length }]);
+      setPickerId('');
+      setToast('Photo added from Media picker.');
+    } catch (err) {
+      setServerError(err?.body?.message ?? err?.message ?? 'Could not add photo.');
+    } finally { setSaving(false); }
+  };
+
+  const mutatePhoto = async (photo, patch) => {
+    const pid = getId(photo);
+    const prev = photos;
+    setPhotos((list) => list.map((p) => (p === photo ? { ...p, ...patch } : p)));
+    try {
+      if (String(pid ?? '').startsWith('tmp-')) return;
+      await albumItemsApi.update(pid, patch);
+    } catch {
+      setPhotos(prev);
+      setServerError('Photo update failed — rolled back.');
+    }
+  };
+
+  const movePhoto = async (index, dir) => {
+    const next = [...photos];
+    const j = index + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[index], next[j]] = [next[j], next[index]];
+    const ordered = next.map((p, i) => ({ ...p, order: i }));
+    setPhotos(ordered);
+    try {
+      await Promise.all(ordered.map((p) => {
+        const pid = getId(p);
+        if (String(pid ?? '').startsWith('tmp-')) return null;
+        return albumItemsApi.update(pid, { order: p.order });
+      }));
+      setToast('Order saved.');
+    } catch {
+      setServerError('Reorder failed to persist — reload to see server order.');
+    }
+  };
+
+  const toggleFeaturePhoto = async (photo) => {
+    if (!photo.is_featured && featuredCount >= MAX_FEATURED_PHOTOS) {
+      setServerError(`Featured-photo cap reached (max ${MAX_FEATURED_PHOTOS}). Unfeature another photo first.`);
+      return;
+    }
+    await mutatePhoto(photo, { is_featured: !photo.is_featured });
+  };
+
+  const removePhoto = async (photo) => {
+    const pid = getId(photo);
+    setPhotos((list) => list.filter((p) => p !== photo));
+    try {
+      if (!String(pid ?? '').startsWith('tmp-')) await albumItemsApi.remove(pid);
+      setToast('Photo removed from album (media kept).');
+    } catch {
+      setPhotos((list) => [...list, photo]);
+      setServerError('Remove failed — rolled back.');
+    }
+  };
+
+  const mediaName = (mid) => {
+    const m = media.find((x) => String(getId(x)) === String(mid));
+    return m?.filename ?? m?.originalName ?? String(mid);
+  };
+
+  return (
+    <section aria-label={isNew ? 'New album' : 'Edit album'}>
+      <div className="admin-page-head">
+        <div><h1>{isNew ? 'New album' : form.title}</h1><p className="admin-muted">Manual create · Media picker · reorder · featured ≤ {MAX_FEATURED_PHOTOS}.</p></div>
+        <Link className="gdg-btn gdg-btn-secondary" to="/admin/gallery">Back to albums</Link>
+      </div>
+      {blocker?.state === 'blocked' ? (
+        <div className="admin-summary" role="alert"><h3>Unsaved changes</h3>
+          <div className="gdg-btn-row">
+            <button type="button" className="gdg-btn gdg-btn-secondary" onClick={() => blocker.reset()}>Stay</button>
+            <button type="button" className="gdg-btn gdg-btn-primary admin-danger" onClick={() => blocker.proceed()}>Discard</button>
+          </div>
+        </div>
+      ) : null}
+      <FormSummary errors={errors} summaryRef={summaryRef} />
+      {serverError ? <div className="admin-summary" role="alert"><p>{serverError}</p></div> : null}
+      {toast ? <p role="status" aria-live="polite" className="admin-muted">{toast}</p> : null}
+
+      <div className="admin-tabs" role="tablist" aria-label="Album sections">
+        {['content', 'photos', 'settings'].map((t) => (
+          <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'is-active' : ''} onClick={() => setTab(t)}>
+            {t === 'content' ? 'Content' : t === 'photos' ? `Photos (${photos.length})` : 'Settings'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'content' ? (
+        <form className="admin-form" onSubmit={(e) => { e.preventDefault(); persist(false); }} noValidate>
+          <div className="admin-form-grid">
+            <Field label="Title" htmlFor="title" error={errors.title} required>
+              <input {...inputProps('title', errors.title)} value={form.title} onChange={(e) => set('title', e.target.value)} />
+            </Field>
+            <Field label="Slug" htmlFor="slug" error={errors.slug ?? (slugDup ? 'Slug is already in use.' : null)} required>
+              <input {...inputProps('slug', errors.slug || slugDup)} value={form.slug} onChange={(e) => { setSlugTouched(true); set('slug', slugify(e.target.value)); }} />
+            </Field>
+          </div>
+          <div className="admin-form-grid">
+            <Field label="Cover media ID" htmlFor="coverMediaId" error={errors.coverMediaId} required>
+              <input {...inputProps('coverMediaId', errors.coverMediaId)} value={form.coverMediaId} onChange={(e) => set('coverMediaId', e.target.value)} />
+            </Field>
+            <Field label="Cover alt text" htmlFor="coverAlt" error={errors.coverAlt} required>
+              <input {...inputProps('coverAlt', errors.coverAlt)} value={form.coverAlt} onChange={(e) => set('coverAlt', e.target.value)} />
+            </Field>
+          </div>
+          <div className="admin-form-grid">
+            <Field label="Linked event ID (optional)" htmlFor="eventId" error={errors.eventId}>
+              <input {...inputProps('eventId', errors.eventId)} value={form.eventId} onChange={(e) => set('eventId', e.target.value)} />
+            </Field>
+            <Field label="Date" htmlFor="date" error={errors.date}>
+              <input {...inputProps('date', errors.date)} type="date" value={form.date} onChange={(e) => set('date', e.target.value)} />
+            </Field>
+          </div>
+          <Field label="Description" htmlFor="description" error={errors.description}>
+            <textarea {...inputProps('description', errors.description)} id="description" rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} />
+          </Field>
+          <div className="gdg-btn-row">
+            <button type="submit" className="gdg-btn gdg-btn-secondary" disabled={saving}>{saving ? 'Saving…' : 'Save draft'}</button>
+            <button type="button" className="gdg-btn gdg-btn-primary" disabled={saving} onClick={() => persist(true)}>{saving ? 'Publishing…' : 'Publish'}</button>
+          </div>
+        </form>
+      ) : null}
+
+      {tab === 'photos' ? (
+        <div className="admin-card">
+          {isNew ? <p className="admin-muted">Save the album first, then add photos.</p> : (
+            <>
+              <div className="admin-toolbar">
+                <label className="admin-visually-hidden" htmlFor="photo-picker">Add photo from Media</label>
+                <select id="photo-picker" value={pickerId} onChange={(e) => setPickerId(e.target.value)}>
+                  <option value="">Pick from Media…</option>
+                  {media.map((m) => (
+                    <option key={getId(m)} value={getId(m)}>{mediaName(getId(m))}</option>
+                  ))}
+                </select>
+                <button type="button" className="gdg-btn gdg-btn-primary" disabled={!pickerId || saving} onClick={addPhoto}>Add photo</button>
+                <span className="admin-muted" aria-live="polite">Featured {featuredCount}/{MAX_FEATURED_PHOTOS}</span>
+              </div>
+              {photos.length === 0 ? <p className="admin-muted">No photos yet — add from the Media picker (no new upload flow here).</p> : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead><tr><th scope="col">Media</th><th scope="col">Order</th><th scope="col">Featured</th><th scope="col">Actions</th></tr></thead>
+                    <tbody>
+                      {photos.map((p, i) => (
+                        <tr key={getId(p) ?? i}>
+                          <td>{p.caption ?? mediaName(p.media_id ?? p.mediaId)}</td>
+                          <td>{p.order ?? i}</td>
+                          <td>
+                            <input type="checkbox" checked={!!p.is_featured} onChange={() => toggleFeaturePhoto(p)} aria-label={`Feature photo ${i + 1}`} />
+                          </td>
+                          <td>
+                            <button type="button" onClick={() => movePhoto(i, -1)} disabled={i === 0} aria-label={`Move photo ${i + 1} up`}>↑</button>{' '}
+                            <button type="button" onClick={() => movePhoto(i, 1)} disabled={i === photos.length - 1} aria-label={`Move photo ${i + 1} down`}>↓</button>{' '}
+                            <button type="button" onClick={() => removePhoto(p)}>Remove</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {tab === 'settings' ? (
+        <form className="admin-form" onSubmit={(e) => { e.preventDefault(); persist(false); }}>
+          <Toggle id="album-featured" label="Highlight album" checked={form.is_featured} onChange={(v) => set('is_featured', v)} />
+          <Toggle id="album-active" label="Active (off hides publicly)" checked={form.is_active} onChange={(v) => set('is_active', v)} />
+          <Field label="Status" htmlFor="status" error={errors.status}>
+            <select {...inputProps('status', errors.status)} value={form.status} onChange={(e) => set('status', e.target.value)}>
+              {['draft', 'published', 'archived'].map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+          <div className="gdg-btn-row">
+            <button type="submit" className="gdg-btn gdg-btn-secondary" disabled={saving}>Save settings</button>
+            {!isNew ? <button type="button" className="gdg-btn gdg-btn-secondary" onClick={() => setConfirm(true)}>Archive / delete</button> : null}
+          </div>
+        </form>
+      ) : null}
+
+      <TypedConfirm open={confirm} title="Archive album?" body="Archive hides it publicly but keeps it editable (preferred)." expected={form.slug} confirmLabel="Archive" busy={saving}
+        onCancel={() => setConfirm(false)}
+        onConfirm={async () => {
+          setSaving(true);
+          try { await albumsApi.update(id, { is_active: false }); navigate('/admin/gallery'); }
+          catch (err) { setServerError(err?.body?.message ?? err?.message ?? 'Archive failed.'); setSaving(false); setConfirm(false); }
+        }} />
+    </section>
+  );
+}

@@ -25,6 +25,7 @@ export const CreateMediaCollectionItemSchema = createInsertSchema(
                   .refine((val) => !val || val.trim().length > 0, {
                         message: "Caption cannot be empty if provided.",
                   }),
+            isFeatured: z.boolean().optional(),
       });
 
 export const UpdateMediaCollectionItemSchema =

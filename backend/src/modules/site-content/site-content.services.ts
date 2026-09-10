@@ -17,10 +17,9 @@ import {
 } from "./site-content.validations";
 
 const validateSiteContentReferences = async (
-      data: Pick<CreateSiteContentDTO, "updatedBy"> &
-            Partial<Pick<CreateSiteContentDTO, "mediaId">>,
+      data: Partial<Pick<CreateSiteContentDTO, "updatedBy" | "mediaId">>,
 ) => {
-      if (!(await getAdminById(data.updatedBy))) {
+      if (data.updatedBy && !(await getAdminById(data.updatedBy))) {
             throw new AppError(400, "updatedBy must reference an existing admin");
       }
 

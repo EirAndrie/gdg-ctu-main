@@ -390,3 +390,141 @@ a {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ---------- CMS public feeds (spec v0.4 Home feeds + §5) ---------- */
+
+.gdg-strip-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.gdg-strip-head h2 {
+  margin: 0.5rem 0 0;
+}
+
+.gdg-carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 280px);
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding: 0.5rem 0 1rem;
+  scroll-snap-type: x mandatory;
+}
+
+.gdg-carousel-card {
+  scroll-snap-align: start;
+}
+
+.gdg-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.gdg-card-link:hover h3 {
+  color: var(--gdg-blue);
+}
+
+.gdg-partner-strip {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.gdg-partner-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  max-width: 200px;
+  height: 72px;
+  padding: 0.5rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.gdg-partner-chip img {
+  max-height: 52px;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+.gdg-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem;
+  flex-wrap: wrap;
+}
+
+.gdg-tabs button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.gdg-tabs button.is-active {
+  background: var(--gdg-blue);
+  border-color: var(--gdg-blue);
+  color: #fff;
+}
+
+.gdg-feed-error {
+  background: #fce8e6;
+  border: 1px solid var(--gdg-red);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+
+.gdg-feed-error p {
+  margin: 0 0 0.75rem;
+}
+
+.gdg-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #eceff1, #f7f9fa, #eceff1);
+  background-size: 200% 100%;
+  animation: gdg-shimmer 1.4s ease-in-out infinite;
+}
+
+.gdg-skeleton-photo {
+  height: 220px;
+  margin-bottom: 0.75rem;
+}
+
+.gdg-skeleton-line {
+  height: 16px;
+  margin-bottom: 0.5rem;
+}
+
+.gdg-skeleton-line.short {
+  width: 60%;
+}
+
+.gdg-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@keyframes gdg-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -49,6 +49,23 @@ export const getMediaCollectionItem = async (
       return item;
 };
 
+/** Ordered items for one album (public detail view). */
+export const getItemsByCollectionId = async (collectionId: string) =>
+      db
+            .select()
+            .from(mediaCollectionItems)
+            .where(eq(mediaCollectionItems.collectionId, collectionId))
+            .orderBy(asc(mediaCollectionItems.displayOrder));
+
+/** Featured-photo strip across albums (cap enforced by caller, max 10). */
+export const getFeaturedCollectionItems = async (limit = 8) =>
+      db
+            .select()
+            .from(mediaCollectionItems)
+            .where(eq(mediaCollectionItems.isFeatured, true))
+            .orderBy(asc(mediaCollectionItems.displayOrder))
+            .limit(limit);
+
 export const deleteMediaCollectionItem = async (
       collectionId: string,
       mediaId: string,

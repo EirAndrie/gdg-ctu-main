@@ -33,14 +33,21 @@ export const CreateSiteContentSchema = createInsertSchema(siteContent)
                         message: "Button URL must be a valid URL if provided.",
                   }),
             isActive: z.boolean().optional(),
-            updatedBy: z.uuid({ message: "UpdatedBy must be a valid UUID." }),
+            // Clerk IDs are opaque strings (e.g. "user_..."), not UUIDs.
+            updatedBy: z
+                  .string()
+                  .trim()
+                  .min(1, { message: "UpdatedBy must be a valid Clerk ID." }),
       });
 
 export const UpdateSiteContentSchema = CreateSiteContentSchema.partial()
       .extend({
+            // Clerk IDs are opaque strings (e.g. "user_..."), not UUIDs.
             updatedBy: z
                   .string()
-                  .uuid({ message: "UpdatedBy must be a valid UUID." }),
+                  .trim()
+                  .min(1, { message: "UpdatedBy must be a valid Clerk ID." })
+                  .optional(),
       })
       .refine(
             (data) => Object.keys(data).length > 1,

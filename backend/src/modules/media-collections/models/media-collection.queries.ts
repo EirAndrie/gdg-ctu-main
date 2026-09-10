@@ -1,4 +1,4 @@
-import { asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "../../../config/connectDB";
 import { Pagination } from "../../../utils/pagination";
 import { mediaCollections } from "./media-collection";
@@ -26,6 +26,32 @@ export const countMediaCollections = async () => {
 
 export const getMediaCollectionById = async (id: string) => {
       const [col] = await db.select().from(mediaCollections).where(eq(mediaCollections.id, id));
+      return col;
+};
+
+export const getMediaCollectionBySlug = async (slug: string) => {
+      const [col] = await db.select().from(mediaCollections).where(eq(mediaCollections.slug, slug));
+      return col;
+};
+
+/** Public feed: active albums only. */
+export const getActiveMediaCollections = async () =>
+      db
+            .select()
+            .from(mediaCollections)
+            .where(eq(mediaCollections.isActive, true))
+            .orderBy(asc(mediaCollections.displayOrder), asc(mediaCollections.name));
+
+export const getActiveMediaCollectionBySlug = async (slug: string) => {
+      const [col] = await db
+            .select()
+            .from(mediaCollections)
+            .where(
+                  and(
+                        eq(mediaCollections.slug, slug),
+                        eq(mediaCollections.isActive, true),
+                  ),
+            );
       return col;
 };
 

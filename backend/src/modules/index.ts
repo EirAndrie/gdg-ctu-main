@@ -13,6 +13,13 @@ import teamMemberRoutes from "./team-members/team-member.routes";
 import eventSpeakerRoutes from "./event-speakers/event-speaker.routes";
 import termsRoutes from "./terms/terms.routes";
 import memberTermsRoutes from "./member_terms/member-terms.routes";
+import partnerRoutes from "./partners/partner.routes";
+import healthRoutes from "./health/health.routes";
+import publicTeamRoutes from "./public/public-team.routes";
+import publicEventsRoutes from "./public/public-events.routes";
+import publicContentRoutes from "./public/public-content.routes";
+import publicPartnersRoutes from "./public/public-partners.routes";
+import publicGalleryRoutes from "./public/public-gallery.routes";
 
 const router = Router();
 const protectedRouter = Router();
@@ -31,6 +38,15 @@ protectedRouter.use("/media-collections", mediaCollectionRoutes);
 protectedRouter.use("/media-collection-items", mediaCollectionItemRoutes);
 protectedRouter.use("/terms", termsRoutes);
 protectedRouter.use("/member-terms", memberTermsRoutes);
+protectedRouter.use("/partners", partnerRoutes);
 router.use(protectedRouter);
+
+// Public (no auth) — CMS reads for the website.
+router.use("/health", healthRoutes);
+router.use("/public/team", publicTeamRoutes);
+router.use("/public/events", publicEventsRoutes);
+router.use("/public/content", publicContentRoutes);
+router.use("/public/partners", publicPartnersRoutes);
+router.use("/public/gallery", publicGalleryRoutes);
 
 export default router;

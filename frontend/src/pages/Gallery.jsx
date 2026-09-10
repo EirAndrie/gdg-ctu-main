@@ -1,37 +1,66 @@
-const albums = [
-  {
-    title: 'HackIT The IBPAP Challenge',
-    category: 'Hackathon',
-    date: 'August 17, 2026',
-    venue: 'Cebu Institute of Technology – University',
-    description:
-      'Students from Cebu Technological University - Main Campus, most of them serving as officers of GDGoC-CTU.',
-    cover: '/legacy-images/gallery/1.jpg',
-    photoCount: 1,
-  },
-  {
-    title: 'DevFest Cebu 2025',
-    category: 'Event',
-    date: 'November 30, 2025',
-    venue: 'Golden Peak Hotel & Suites',
-    description:
-      'GDGoC CTU was proud to be a partner for DevFest Cebu 2025 with the amazing Cebu tech community.',
-    cover: '/legacy-images/gallery/gdgdev4.jpg',
-    photoCount: 5,
-  },
-  {
-    title: 'GDGoC-CTU Jam 1',
-    category: 'Event',
-    date: 'November 10, 2025',
-    venue: 'Online',
-    description:
-      'More than just a jam — a sign of huge progress for our developer community at CTU and the local game jam scene.',
-    cover: '/legacy-images/gallery/JAM1.jpg',
-    photoCount: 4,
-  },
-];
+import { Link, useParams } from 'react-router-dom';
+import { formatDate, mapAlbum, publicApi, usePublicFeed } from '../api/public.js';
+import { FeedError, FeedSkeleton, friendlyFeedError } from '../components/FeedStates.jsx';
+
+function hideImage(e) {
+  e.currentTarget.style.display = 'none';
+}
+
+function AlbumDetail({ slug }) {
+  const { data, loading, error, retry } = usePublicFeed(
+    () => publicApi.getAlbumBySlug(slug).then((a) => (a ? mapAlbum(a) : null)),
+    `album-${slug}`,
+  );
+  return (
+    <div className="gdg-container">
+      <section className="gdg-section">
+        <Link to="/gallery" className="gdg-btn gdg-btn-secondary">← All albums</Link>
+        {loading ? <FeedSkeleton count={4} label="Loading album…" /> : null}
+        {!loading && (error || !data) ? (
+          <FeedError message={error ? friendlyFeedError(error) : 'This album is not published.'} onRetry={retry} />
+        ) : null}
+        {!loading && !error && data ? (
+          <>
+            <span className="gdg-badge">Album</span>
+            <h2>{data.title}</h2>
+            {data.description ? <p className="gdg-subtitle">{data.description}</p> : null}
+            <div className="gdg-card-meta">
+              {data.date ? <span>{formatDate(data.date)}</span> : null}
+              <span>{data.items.length} Photos</span>
+            </div>
+            {data.items.length ? (
+              <div className="gdg-grid">
+                {data.items.map((photo) => (
+                  <div key={photo.id} className="gdg-card">
+                    {photo.url ? (
+                      <img className="gdg-photo" src={photo.url} alt={photo.alt} loading="lazy" onError={hideImage} />
+                    ) : null}
+                    {photo.caption ? <p>{photo.caption}</p> : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="gdg-subtitle">No photos in this album yet.</p>
+            )}
+          </>
+        ) : null}
+      </section>
+    </div>
+  );
+}
 
 export default function Gallery() {
+  const { slug } = useParams();
+  if (slug) return <AlbumDetail slug={slug} />;
+  return <GalleryList />;
+}
+
+function GalleryList() {
+  const { data, loading, error, retry } = usePublicFeed(
+    () => publicApi.getAlbums().then((rows) => rows.map(mapAlbum)),
+    'gallery-albums',
+  );
+
   return (
     <div className="gdg-container">
       <section className="gdg-section">
@@ -44,30 +73,34 @@ export default function Gallery() {
           community activities that shaped GDG - Cebu Technological University
           - Main Campus.
         </p>
-        <div className="gdg-grid">
-          {albums.map((album) => (
-            <div key={album.title} className="gdg-card">
-              <img
-                className="gdg-photo"
-                src={album.cover}
-                alt={album.title}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <p>
-                <span className="gdg-tag">{album.category}</span>
-              </p>
-              <h3>{album.title}</h3>
-              <p>{album.description}</p>
-              <div className="gdg-card-meta">
-                <span>{album.date}</span>
-                <span>{album.venue}</span>
-                <span>{album.photoCount} Photos</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {loading ? <FeedSkeleton label="Loading albums…" /> : null}
+        {!loading && error ? <FeedError message={friendlyFeedError(error)} onRetry={retry} /> : null}
+        {!loading && !error && (!data || data.length === 0) ? (
+          <p className="gdg-subtitle">No albums published yet — check back soon.</p>
+        ) : null}
+        {!loading && !error && data?.length ? (
+          <div className="gdg-grid">
+            {data.map((album) => (
+              <Link
+                key={album.id}
+                to={album.slug ? `/gallery/${album.slug}` : '/gallery'}
+                className="gdg-card gdg-card-link"
+              >
+                {album.coverUrl ? (
+                  <img className="gdg-photo" src={album.coverUrl} alt={album.coverAlt} loading="lazy" onError={hideImage} />
+                ) : (
+                  <div className="gdg-photo-fallback">{album.title.charAt(0)}</div>
+                )}
+                <h3>{album.title}</h3>
+                {album.description ? <p>{album.description}</p> : null}
+                <div className="gdg-card-meta">
+                  {album.date ? <span>{formatDate(album.date)}</span> : null}
+                  <span>{album.photoCount} Photos</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </section>
     </div>
   );

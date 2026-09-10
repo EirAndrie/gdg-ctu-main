@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { mapContent, publicApi, sortPartners, usePublicFeed } from '../api/public.js';
+
 const purposeCards = [
   {
     title: 'Our Mission',
@@ -78,7 +81,7 @@ const timeline = [
   },
 ];
 
-const partners = [
+const legacyPartners = [
   { name: 'UX Mini Cebu', role: 'Organization Partner', image: '/legacy-images/partnership/p1.jpg' },
   { name: 'Google', role: 'Technology Partner', image: null },
   { name: 'Microsoft', role: 'Technology Partner', image: null },
@@ -86,23 +89,61 @@ const partners = [
   { name: 'GitHub', role: 'Developer Partner', image: null },
 ];
 
+function hideImage(e) {
+  e.currentTarget.style.display = 'none';
+}
+
 export default function About() {
+  const about = usePublicFeed(
+    () => publicApi.getContentByKey('about').then((c) => (c ? mapContent(c) : null)),
+    'about-key',
+  );
+  const community = usePublicFeed(
+    () => publicApi.getContentByKey('community').then((c) => (c ? mapContent(c) : null)),
+    'community-key',
+  );
+  const partners = usePublicFeed(
+    () => publicApi.getPartners().then(sortPartners),
+    'about-partners',
+  );
+
+  const aboutContent = !about.loading && !about.error ? about.data : null;
+  const communityContent = !community.loading && !community.error ? community.data : null;
+  const cmsPartners = !partners.loading && !partners.error ? partners.data : null;
+
   return (
     <div className="gdg-container">
       <section className="gdg-section">
         <span className="gdg-badge">About Us</span>
         <h2>
-          Building Developers. Creating Impact.{' '}
-          <span className="gdg-gradient-text">Together.</span>
+          {aboutContent?.title || (<>Building Developers. Creating Impact. <span className="gdg-gradient-text">Together.</span></>)}
         </h2>
         <p className="gdg-subtitle">
-          Google Developer Groups - Cebu Technological University - Main
-          Campus is a student-led technology community that empowers aspiring
-          developers through workshops, hackathons, collaborative projects,
-          networking events, and hands-on learning experiences powered by
-          Google technologies.
+          {aboutContent?.subtitle || aboutContent?.body || (
+            <>
+              Google Developer Groups - Cebu Technological University - Main
+              Campus is a student-led technology community that empowers aspiring
+              developers through workshops, hackathons, collaborative projects,
+              networking events, and hands-on learning experiences powered by
+              Google technologies.
+            </>
+          )}
         </p>
+        {aboutContent?.buttonText && aboutContent?.buttonUrl ? (
+          <div className="gdg-btn-row">
+            <a href={aboutContent.buttonUrl} className="gdg-btn gdg-btn-primary">{aboutContent.buttonText}</a>
+          </div>
+        ) : null}
       </section>
+
+      {communityContent ? (
+        <section className="gdg-section" aria-label="Community">
+          <span className="gdg-badge">Community</span>
+          <h2>{communityContent.title || 'Our Community'}</h2>
+          {communityContent.subtitle ? <p className="gdg-subtitle">{communityContent.subtitle}</p> : null}
+          {communityContent.body ? <p>{communityContent.body}</p> : null}
+        </section>
+      ) : null}
 
       <section className="gdg-section">
         <span className="gdg-badge">Our Purpose</span>
@@ -167,25 +208,40 @@ export default function About() {
           institutions, and developer communities.
         </p>
         <div className="gdg-grid">
-          {partners.map((partner) => (
-            <div key={partner.name} className="gdg-card">
-              {partner.image ? (
-                <img
-                  className="gdg-photo"
-                  src={partner.image}
-                  alt={partner.name}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="gdg-photo-fallback">{partner.name.charAt(0)}</div>
-              )}
-              <h3>{partner.name}</h3>
-              <p>{partner.role}</p>
-            </div>
-          ))}
+          {cmsPartners?.length
+            ? cmsPartners.map((partner) => (
+              <div key={partner.id} className="gdg-card">
+                {partner.logoUrl ? (
+                  <img className="gdg-photo" src={partner.logoUrl} alt={partner.logoAlt} loading="lazy" onError={hideImage} />
+                ) : (
+                  <div className="gdg-photo-fallback">{partner.name.charAt(0)}</div>
+                )}
+                <h3>{partner.name}</h3>
+                <p>{partner.description || partner.tier}</p>
+              </div>
+            ))
+            : legacyPartners.map((partner) => (
+              <div key={partner.name} className="gdg-card">
+                {partner.image ? (
+                  <img
+                    className="gdg-photo"
+                    src={partner.image}
+                    alt={partner.name}
+                    onError={hideImage}
+                  />
+                ) : (
+                  <div className="gdg-photo-fallback">{partner.name.charAt(0)}</div>
+                )}
+                <h3>{partner.name}</h3>
+                <p>{partner.role}</p>
+              </div>
+            ))}
         </div>
+        {cmsPartners?.length ? (
+          <div className="gdg-btn-row">
+            <Link to="/partners" className="gdg-btn gdg-btn-secondary">All Partners</Link>
+          </div>
+        ) : null}
       </section>
     </div>
   );

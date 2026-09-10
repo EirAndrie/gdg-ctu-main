@@ -53,6 +53,18 @@ const BaseCreateEventSchema = createInsertSchema(events)
                         message: "Location embed URL must be a valid URL if provided.",
                   }),
             registrationEnabled: z.boolean().optional().default(false),
+            registrationUrl: z
+                  .string()
+                  .trim()
+                  .nullable()
+                  .optional()
+                  .refine((val) => !val || val.startsWith("https://"), {
+                        message:
+                              "Registration URL must be a valid https:// URL when registration is enabled.",
+                  }),
+            isFeatured: z.boolean().optional().default(false),
+            displayOrder: z.number().int().nonnegative().optional(),
+            isActive: z.boolean().optional(),
             startAt: z.coerce.date(),
             endAt: z.coerce.date(),
             status: z.enum(EVENT_STATUSES).default("draft"),
@@ -64,8 +76,35 @@ const BaseCreateEventSchema = createInsertSchema(events)
                   }),
       });
 
-export const CreateEventSchema =
-      BaseCreateEventSchema.superRefine(eventDateRule);
+export const CreateEventSchema = BaseCreateEventSchema.superRefine(
+      (data, ctx) => {
+            eventDateRule(data, ctx);
+            if (data.registrationEnabled) {
+                  if (!data.registrationUrl) {
+                        ctx.addIssue({
+                              code: "custom",
+                              message:
+                                    "Registration URL is required when registration is enabled.",
+                              path: ["registrationUrl"],
+                        });
+                  } else {
+                        try {
+                              const url = new URL(data.registrationUrl);
+                              if (url.protocol !== "https:") {
+                                    throw new Error("not-https");
+                              }
+                        } catch {
+                              ctx.addIssue({
+                                    code: "custom",
+                                    message:
+                                          "Registration URL must be a valid https:// URL.",
+                                    path: ["registrationUrl"],
+                              });
+                        }
+                  }
+            }
+      },
+);
 
 export const UpdateEventSchema = BaseCreateEventSchema.partial()
       .refine(
