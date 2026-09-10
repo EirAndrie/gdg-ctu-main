@@ -1,6 +1,9 @@
 import { createClient, RedisClientType } from "redis";
 import logger from "../../utils/logger";
 import { AppError } from "../../utils/http";
+import { isRedisEnabled } from "./redis.config";
+
+export { isRedisEnabled };
 
 /**
  * Reusable Redis client instance.
@@ -15,6 +18,12 @@ let client: RedisClientType<any, any> | null = null;
  * connection.
  */
 async function getClient(): Promise<RedisClientType<any, any>> {
+      if (!isRedisEnabled()) {
+            throw new AppError(
+                  503,
+                  "Cache service unavailable: Redis is not configured",
+            );
+      }
       if (!client) {
             client = createClient({
                   url: process.env.REDIS_URL,
@@ -60,6 +69,10 @@ async function getClient(): Promise<RedisClientType<any, any>> {
  * ```
  */
 export async function getCache<T>(key: string): Promise<T | null> {
+      // Graceful no-op when Redis is disabled: cache miss -> callers fall through to DB.
+      if (!isRedisEnabled()) {
+            return null;
+      }
       const c = await getClient();
       const raw = await c.get(key);
       if (raw === null) return null;
@@ -91,6 +104,11 @@ export async function setCache<T>(
       value: T,
       ttlSeconds?: number,
 ): Promise<void> {
+      // Graceful no-op when Redis is disabled.
+      if (!isRedisEnabled()) {
+            logger.debug("Redis disabled - skipping setCache");
+            return;
+      }
       const c = await getClient();
       const serialized =
             typeof value === "string" ? value : JSON.stringify(value);
@@ -113,6 +131,11 @@ export async function setCache<T>(
  * ```
  */
 export async function deleteCache(key: string): Promise<void> {
+      // Graceful no-op when Redis is disabled.
+      if (!isRedisEnabled()) {
+            logger.debug("Redis disabled - skipping deleteCache");
+            return;
+      }
       const c = await getClient();
       await c.del(key);
 }
@@ -125,6 +148,11 @@ export async function deleteCache(key: string): Promise<void> {
  * modest cache size.
  */
 export async function clearCacheByPrefix(prefix: string): Promise<void> {
+      // Graceful no-op when Redis is disabled.
+      if (!isRedisEnabled()) {
+            logger.debug("Redis disabled - skipping clearCacheByPrefix");
+            return;
+      }
       const c = await getClient();
       const keys = await c.keys(`${prefix}*`);
       if (keys.length > 0) {

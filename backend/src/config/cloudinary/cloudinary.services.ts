@@ -1,5 +1,5 @@
 import { UploadApiOptions, UploadApiResponse } from "cloudinary";
-import cloudinary from "./cloudinary.config";
+import cloudinary, { isCloudinaryEnabled } from "./cloudinary.config";
 import { AppError } from "../../utils/http";
 
 export interface UploadMediaOptions {
@@ -13,6 +13,12 @@ export async function uploadMedia(
       buffer: Buffer,
       options: UploadMediaOptions,
 ): Promise<UploadApiResponse> {
+      if (!isCloudinaryEnabled()) {
+            throw new AppError(
+                  503,
+                  "Media service unavailable: Cloudinary is not configured",
+            );
+      }
       return new Promise((resolve, reject) => {
             const uploadOptions: UploadApiOptions = {
                   folder: "GDGoC", // CHANGES THIS FOLDER BASE ON YOUR CLOUDINARY PREFERENCES
@@ -51,6 +57,12 @@ export async function deleteMedia(
       publicId: string,
       resourceType: "image" | "video" | "raw" = "image",
 ) {
+      if (!isCloudinaryEnabled()) {
+            throw new AppError(
+                  503,
+                  "Media service unavailable: Cloudinary is not configured",
+            );
+      }
       return cloudinary.uploader.destroy(publicId, {
             resource_type: resourceType,
       });

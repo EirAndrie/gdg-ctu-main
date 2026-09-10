@@ -21,6 +21,7 @@ import {
       deleteCache,
       clearCacheByPrefix,
 } from "../../config/redis/redis.services";
+import logger from "../../utils/logger";
 
 // Constant value for cache timeout
 const DEFAULT_CACHE_TIME_TO_LIVE = 60000;
@@ -110,11 +111,26 @@ export const deleteMediaService = async (id: string) => {
             );
       }
 
-      // Delete from Cloudinary using publicId and resourceType
-      await cloudinaryDeleteMedia(
-            media.publicId,
-            media.resourceType as "image" | "video" | "raw",
-      );
+      // Delete from Cloudinary using publicId and resourceType.
+      // Tolerate Cloudinary being disabled (503) so DB cleanup still proceeds.
+      try {
+            await cloudinaryDeleteMedia(
+                  media.publicId,
+                  media.resourceType as "image" | "video" | "raw",
+            );
+      } catch (error: any) {
+            if (
+                  (error instanceof AppError && error.statusCode === 503) ||
+                  (typeof error?.message === "string" &&
+                        error.message.includes("not configured"))
+            ) {
+                  logger.warn(
+                        "Cloudinary disabled - skipping Cloudinary delete, removing DB record only",
+                  );
+            } else {
+                  throw error;
+            }
+      }
 
       await deleteCache(`media:${id}`);
       await clearCacheByPrefix("media:");
