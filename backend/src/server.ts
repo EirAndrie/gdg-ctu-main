@@ -29,7 +29,7 @@ app.use(clerkMiddleware());
 
 // ROUTES SECTION
 app.use("/GDGoC-CTU-Main/v0.0.1", apiRoutes);
-configureEnvironmentRoutes(app, isProduction);
+configureEnvironmentRoutes(app);
 
 connectDB()
       .then(() => testCloudinaryConnection())
